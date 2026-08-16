@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Details Portal | Academic Management System</title>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- LOGIN SECTION (Strict Authentication Required) -->
+  <section id="loginSection" class="auth-section">
+    <div class="auth-wrapper">
+      <div class="auth-glass-card">
+        <div class="auth-header">
+          <div class="brand-logo">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <h2>EduRecord Login</h2>
+
+        </div>
+
+        <form id="loginForm" class="auth-form">
+          <div class="form-group">
+            <label for="loginEmail"><i class="fa-solid fa-id-badge"></i> Faculty Id</label>
+            <input type="text" id="loginEmail" placeholder="Enter Faculty Id" required autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword"><i class="fa-solid fa-key"></i> Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="loginPassword" placeholder="Enter Password" required
+                autocomplete="current-password">
+              <button type="button" class="btn-toggle-password" id="togglePasswordBtn">
+                <i class="fa-solid fa-eye" id="passwordEyeIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn">
+            <span class="btn-text">Log In</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN DASHBOARD PORTAL -->
+  <section id="portalSection" class="portal-section hidden">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="app-logo">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div class="app-brand-info">
+          <h1>EduRecord</h1>
+          <span class="brand-tag">Student Information System</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+          <i class="fa-solid fa-sun" id="themeIcon"></i>
+          <span id="themeText">Dark Mode</span>
+        </button>
+
+        <div class="faculty-profile-card" id="openProfileBtn" title="Click to view & edit user profile"
+          style="cursor: pointer;">
+          <div class="faculty-avatar">
+            <i class="fa-solid fa-user-tie"></i>
+          </div>
+          <div class="faculty-details">
+            <div class="faculty-name-row">
+              <span class="faculty-name" id="facultyNameDisplay">Faculty User</span>
+              <span class="role-badge" id="facultyRoleBadge">Admin</span>
+            </div>
+            <span class="faculty-role" id="facultyRoleDisplay">Department Faculty</span>
+          </div>
+        </div>
+
+        <button class="btn btn-outline-danger btn-sm" id="logoutBtn">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <!-- STUDENT DASHBOARD VIEW SECTION -->
+      <div id="studentDashboardSection">
+        <!-- TOP TOOLBAR & SEARCH FILTER ROW -->
+        <div class="toolbar-section">
+          <div class="toolbar-top-row">
+            <div class="search-box-wrapper">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="searchInput" placeholder="Search by Student Name, Roll No" class="search-input">
+              <button type="button" class="btn-clear-search hidden" id="clearSearchBtn">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-bottom-row">
+            <div class="filter-controls">
+              <!-- Branch Filter -->
+              <div class="select-wrapper">
+                <i class="fa-solid fa-network-wired"></i>
+                <select id="branchFilter" class="filter-select">
+                  <option value="ALL">All Branches</option>
+                  <option value="CSE">CSE - Computer Science & Engineering</option>
+                  <option value="CST">CST - Computer Science & Technology</option>
+                  <option value="AIML">AIML - Artificial Intelligence & Machine Learning</option>
+                  <option value="CAI">CAI - Artificial Intelligence</option>
+                  <option value="DS">DS - Data Science</option>
+                  <option value="ECE">ECE - Electronics & Communication</option>
+                  <option value="ECT">ECT - Electronics & Computer Tech</option>
+                  <option value="EEE">EEE - Electrical & Electronics</option>
+                  <option value="MEC">MEC - Mechanical Engineering</option>
+                  <option value="CIVIL">CIVIL - Civil Engineering</option>
+                  <option value="IT">IT - Information Technology</option>
+                </select>
+              </div>
+
+              <!-- Section Filter -->
+              <div class="select-wrapper">
+                <i class="fa-solid fa-cubes"></i>
+                <select id="sectionFilter" class="filter-select">
+                  <option value="ALL">All Sections</option>
+                  <option value="A">Section A</option>
+                  <option value="B">Section B</option>
+                  <option value="C">Section C</option>
+                  <option value="D">Section D</option>
+                  <option value="E">Section E</option>
+                </select>
+              </div>
+
+              <!-- Year Filter -->
+              <div class="select-wrapper">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <select id="yearFilter" class="filter-select">
+                  <option value="ALL">All Academic Years</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                </select>
+              </div>
+
+              <!-- Semester Filter -->
+              <div class="select-wrapper">
+                <i class="fa-solid fa-layer-group"></i>
+                <select id="semesterFilter" class="filter-select">
+                  <option value="ALL">All Semesters</option>
+                  <option value="I Semester">I Semester</option>
+                  <option value="II Semester">II Semester</option>
+                  <option value="III Semester">III Semester</option>
+                  <option value="IV Semester">IV Semester</option>
+                  <option value="V Semester">V Semester</option>
+                  <option value="VI Semester">VI Semester</option>
+                  <option value="VII Semester">VII Semester</option>
+                  <option value="VIII Semester">VIII Semester</option>
+                </select>
+              </div>
+
+              <!-- Admission Type Filter -->
+              <div class="select-wrapper">
+                <i class="fa-solid fa-user-graduate"></i>
+                <select id="admissionTypeFilter" class="filter-select">
+                  <option value="ALL">All Admission Types</option>
+                  <option value="Regular">Regular</option>
+                  <option value="Lateral Entry">Lateral Entry</option>
+                </select>
+              </div>
+
+              <div class="view-toggle">
+                <button class="toggle-btn active" id="gridViewBtn" title="Grid View"><i
+                    class="fa-solid fa-grip"></i></button>
+                <button class="toggle-btn" id="tableViewBtn" title="Table View"><i
+                    class="fa-solid fa-list-check"></i></button>
+              </div>
+            </div>
+
+            <div class="action-buttons-group">
+              <button class="btn btn-outline-danger hidden" id="clearAllFiltersBtn" title="Clear all active filters">
+                <i class="fa-solid fa-filter-circle-xmark"></i> Clear Filters
+              </button>
+              <button class="btn btn-indigo" id="toggleSmartFilterBtn" title="Open Smart Dynamic Student Filter Engine">
+                <i class="fa-solid fa-sliders"></i> Smart Filters
+              </button>
+              <button class="btn btn-emerald" id="openAddModalBtn" title="Only Admin can add students">
+                <i class="fa-solid fa-user-plus"></i> Add Student
+              </button>
+              <button class="btn btn-indigo" id="openImportModalBtn"
+                title="Bulk Add or Update student records via Excel/CSV">
+                <i class="fa-solid fa-file-import"></i> Bulk Import / Update
+              </button>
+              <button class="btn btn-outline-danger" id="bulkDeleteFilteredBtn"
+                title="Delete all student records currently matching active search/filter rules">
+                <i class="fa-solid fa-trash-can"></i> Delete Filtered Students (<span id="filteredDeleteCount">0</span>)
+              </button>
+              <button class="btn btn-outline-emerald" id="exportStudentBtn"
+                title="Export student records with custom field selection">
+                <i class="fa-solid fa-file-export text-emerald"></i> Export Students
+              </button>
+              <button class="btn btn-indigo hidden" id="facultyDashboardBtn" title="Switch to Faculty Dashboard">
+                <i class="fa-solid fa-chalkboard-user"></i> Faculty Dashboard
+              </button>
+            </div>
+          </div>
+
+          <!-- ACTIVE FILTER CHIPS / BADGES BAR -->
+          <div id="activeFiltersBar" class="active-filters-bar hidden mt-2">
+            <span class="active-filters-title"><i class="fa-solid fa-sliders"></i> Active Filters:</span>
+            <div id="filterPillsContainer" class="filter-pills-container"></div>
+            <button type="button" class="btn-text-danger" id="clearAllFiltersBarBtn">
+              <i class="fa-solid fa-xmark"></i> Remove All Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- INLINE DASHBOARD CUSTOM DYNAMIC FILTER PANEL -->
+        <div id="customFilterDashboardSection" class="custom-filter-dashboard-panel mt-3 hidden">
+          <div class="custom-panel-header">
+            <div class="custom-panel-title">
+              <i class="fa-solid fa-sliders text-indigo"></i>
+              <span>Smart Dynamic Student Filter</span>
+              <span id="activeFilterBadge" class="perf-badge ml-2">All Records View</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="dashResetRulesBtn">
+              <i class="fa-solid fa-rotate-left"></i> Reset All Filters
+            </button>
+          </div>
+
+          <div class="custom-panel-body mt-3">
+            <div class="attr-search-wrapper mb-2">
+              <div class="attr-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="filterAttributeSearchInput" placeholder="Type Property"
+                  class="attr-search-input">
+              </div>
+              <div id="attributeTypeBadge" class="attr-type-badge">
+                <span class="badge-type-info"><i class="fa-solid fa-circle-info"></i> Select an attribute to set filter
+                  rules</span>
+              </div>
+            </div>
+
+            <div class="filter-builder-row">
+              <div class="filter-field-col">
+                <label for="dashFilterFieldSelect"><strong><i class="fa-solid fa-filter"></i> Select Student
+                    Attribute:</strong></label>
+                <select id="dashFilterFieldSelect" class="filter-select-lg">
+                  <!-- Dynamically populated from JS -->
+                </select>
+              </div>
+
+              <div class="filter-input-col" id="dashFilterInputContainer">
+                <!-- Switched dynamically between Min/Max Range inputs OR DB Distinct Options -->
+              </div>
+
+              <div class="filter-action-col">
+                <button type="button" class="btn btn-indigo" id="dashAddRuleBtn">
+                  <i class="fa-solid fa-plus"></i> Apply Filter Rule
+                </button>
+              </div>
+            </div>
+
+            <!-- Active Filter Rules Pills -->
+            <div class="active-rules-container mt-3">
+              <span class="active-rules-label"><strong><i class="fa-solid fa-layer-group"></i> Active Filter
+                  Rules:</strong></span>
+              <div id="dashRulesList" class="custom-rules-list mt-1">
+                <span class="text-muted small">No Filter Rules Applied</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTENT VIEWS (Student Cards / Table List) -->
+        <div id="contentViewArea">
+          <div id="studentGridView" class="student-grid"></div>
+
+          <div id="studentTableView" class="table-container hidden">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Roll No / Admission</th>
+                  <th>Student Name</th>
+                  <th>Admission Type</th>
+                  <th>Branch</th>
+                  <th>Sec & Year</th>
+                  <th>Semester</th>
+                  <th>CGPA</th>
+                  <th>Marks %</th>
+                  <th>Attendance</th>
+                  <th>Mobile</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="studentTableBody"></tbody>
+            </table>
+          </div>
+
+          <div id="emptyState" class="empty-state hidden">
+            <div class="empty-icon"><i class="fa-solid fa-user-slash"></i></div>
+            <h3>No Student Records Found</h3>
+            <p>No student matches your filter or search criteria.</p>
+          </div>
+        </div>
+      </div><!-- end studentDashboardSection -->
+
+      <!-- FACULTY DASHBOARD VIEW SECTION -->
+      <div id="facultyDashboardSection" class="hidden">
+        <div class="toolbar-section">
+          <div class="toolbar-top-row flex-between mb-3" style="align-items: center;">
+            <div class="faculty-dash-title">
+              <h2 style="margin: 0; font-size: 1.4rem; display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-chalkboard-user text-indigo"></i>
+                Faculty Dashboard
+              </h2>
+            </div>
+            <button class="btn btn-student-dash" id="switchToStudentDashBtn">
+              <i class="fa-solid fa-graduation-cap"></i> Student Dashboard
+            </button>
+          </div>
+
+          <div class="toolbar-top-row">
+            <div class="search-box-wrapper">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="facultySearchInput" placeholder="Search by Faculty ID,Name" class="search-input">
+              <button type="button" class="btn-clear-search hidden" id="clearFacultySearchBtn">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-bottom-row mt-3">
+            <div class="filter-controls">
+              <!-- Department Filter -->
+              <div class="select-wrapper">
+                <i class="fa-solid fa-building-user"></i>
+                <select id="facultyDeptFilter" class="filter-select">
+                  <option value="ALL">All Departments</option>
+                </select>
+              </div>
+
+              <!-- Designation Filter -->
+              <div class="select-wrapper">
+                <i class="fa-solid fa-user-tie"></i>
+                <select id="facultyDesignationFilter" class="filter-select">
+                  <option value="ALL">All Designations</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="action-buttons-group">
+              <!-- Table / Grid View Toggle -->
+              <div class="view-toggle-group"
+                style="display: flex; gap: 4px; background: var(--input-bg); padding: 3px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <button type="button" class="btn-view-toggle active" id="facultyTableViewBtn" title="Table View"
+                  style="padding: 6px 12px; border-radius: var(--radius-sm); border: none; background: var(--bg-card); color: var(--indigo); cursor: pointer;">
+                  <i class="fa-solid fa-list"></i>
+                </button>
+                <button type="button" class="btn-view-toggle" id="facultyGridViewBtn" title="Grid View"
+                  style="padding: 6px 12px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-muted); cursor: pointer;">
+                  <i class="fa-solid fa-border-all"></i>
+
+                </button>
+              </div>
+
+              <button class="btn btn-emerald" id="openAddFacultyModalBtn">
+                <i class="fa-solid fa-user-plus"></i> Add Faculty
+              </button>
+              <button class="btn btn-outline-emerald" id="exportFacultyBtn"
+                title="Export faculty records with custom field selection">
+                <i class="fa-solid fa-file-export text-emerald"></i> Export Faculty Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FACULTY TABLE CONTENT VIEW -->
+        <div id="facultyTableView" class="table-container mt-3">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Faculty ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone Number</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="facultyTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- FACULTY GRID CONTENT VIEW -->
+        <div id="facultyGridView" class="cards-grid mt-3 hidden"></div>
+
+        <div id="facultyEmptyState" class="empty-state hidden">
+          <div class="empty-icon"><i class="fa-solid fa-user-slash"></i></div>
+          <h3>No Faculty Records Found</h3>
+          <p>No faculty member matches your filter or search criteria.</p>
+          <button class="btn btn-primary mt-3" id="resetFacultySearchBtn">
+            <i class="fa-solid fa-rotate"></i> Reset Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FULL-PAGE STUDENT DETAILS VIEW -->
+  <section id="fullPageStudentView" class="fullpage-student-section hidden">
+    <div class="fullpage-container">
+      <div class="fullpage-header">
+        <button class="btn btn-outline" id="backToDashboardBtn">
+          <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </button>
+        <div class="fullpage-title">
+          <h2>Student Details</h2>
+          <span class="roll-badge-large" id="fpRollHeader">24A81A0629</span>
+        </div>
+        <div class="fullpage-actions" id="fpActionGroup">
+          <button class="btn btn-outline-primary" id="fpEditBtn">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Details
+          </button>
+          <button class="btn btn-outline-danger" id="fpDeleteBtn">
+            <i class="fa-solid fa-trash"></i> Remove Student
+          </button>
+        </div>
+      </div>
+
+      <div class="fullpage-body">
+        <!-- TOP PROFILE CARD -->
+        <div class="fp-hero-card">
+          <div class="fp-avatar-wrapper">
+            <img id="fpPhoto" src="" alt="Student Photo" class="fp-student-photo"
+              onerror="this.src='https://ui-avatars.com/api/?name=Student&size=200&background=1E40AF&color=ffffff'">
+          </div>
+          <div class="fp-hero-details">
+            <h1 id="fpName">STUDENT FULL NAME</h1>
+            <div class="fp-chips-row">
+              <span class="fp-chip chip-branch" id="fpBranch">CSE</span>
+              <span class="fp-chip chip-sec" id="fpSecYear">Section A • Year 3</span>
+              <span class="fp-chip chip-sem" id="fpSemester">V Semester</span>
+              <span class="fp-chip chip-gender" id="fpGender">Male</span>
+              <span class="badge badge-indigo" id="fpAdmissionTypeBadge">Regular</span>
+            </div>
+
+            <!-- NUMERIC CGPA & MARKS PERCENTAGE -->
+            <div class="fp-metrics-grid">
+              <div class="metric-box">
+                <span class="m-label">CGPA</span>
+                <span class="m-val val-cgpa" id="fpCgpa">9.14 / 10.00</span>
+              </div>
+              <div class="metric-box">
+                <span class="m-label">Marks Percentage</span>
+                <span class="m-val val-marks" id="fpMarksPercent">91.40%</span>
+              </div>
+              <div class="metric-box">
+                <span class="m-label">Attendance Percentage</span>
+                <span class="m-val val-att" id="fpAttendance">94.80%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILS SECTIONS TABLE -->
+        <div class="fp-details-grid">
+          <!-- PERSONAL INFORMATION -->
+          <div class="fp-card">
+            <div class="fp-card-header"><i class="fa-solid fa-id-card"></i> Personal Details</div>
+            <table class="fp-table">
+              <tr>
+                <td class="lbl">Roll Number:</td>
+                <td class="val" id="fpRollNo">24A81A0629</td>
+              </tr>
+              <tr>
+                <td class="lbl">Admission Number:</td>
+                <td class="val" id="fpAdmissionNo">047/CST/2024</td>
+              </tr>
+              <tr>
+                <td class="lbl">Admission Type:</td>
+                <td class="val" id="fpAdmissionTypeDetail"><span class="badge badge-indigo">Regular</span></td>
+              </tr>
+              <tr>
+                <td class="lbl">Course & Branch:</td>
+                <td class="val" id="fpCourseBranch">B.Tech - CST</td>
+              </tr>
+              <tr>
+                <td class="lbl">Section & Year:</td>
+                <td class="val" id="fpSecYearDetail">Section A, 3rd Year</td>
+              </tr>
+              <tr>
+                <td class="lbl">Semester:</td>
+                <td class="val" id="fpSemDetail">V Semester</td>
+              </tr>
+              <tr>
+                <td class="lbl">Date of Birth:</td>
+                <td class="val" id="fpDob">10/05/2006</td>
+              </tr>
+              <tr>
+                <td class="lbl">Gender & Religion:</td>
+                <td class="val" id="fpGenderReligion">Male, Hindu</td>
+              </tr>
+              <tr>
+                <td class="lbl">Nationality:</td>
+                <td class="val" id="fpNationality">Indian</td>
+              </tr>
+              <tr>
+                <td class="lbl">Entrance & CET Rank:</td>
+                <td class="val" id="fpCet">EAPCET - 25778</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- CONTACT & IDENTIFICATION -->
+          <div class="fp-card">
+            <div class="fp-card-header"><i class="fa-solid fa-address-book"></i> Contact Details</div>
+            <table class="fp-table">
+              <tr>
+                <td class="lbl">Mobile / Phone:</td>
+                <td class="val" id="fpPhone">9573471715</td>
+              </tr>
+              <tr>
+                <td class="lbl">Personal Email:</td>
+                <td class="val" id="fpPersonalEmail">student@gmail.com</td>
+              </tr>
+              <tr>
+                <td class="lbl">College Email:</td>
+                <td class="val" id="fpCollegeEmail">roll@sves.org.in</td>
+              </tr>
+              <tr>
+                <td class="lbl">Aadhar Number:</td>
+                <td class="val" id="fpAdhar">892192096038</td>
+              </tr>
+              <tr>
+                <td class="lbl">ABC ID:</td>
+                <td class="val" id="fpAbcId">255692439187</td>
+              </tr>
+              <tr>
+                <td class="lbl">Bank Account:</td>
+                <td class="val" id="fpBankAcc">061010023000096</td>
+              </tr>
+              <tr>
+                <td class="lbl">Reimbursement:</td>
+                <td class="val" id="fpReimbursement">Yes</td>
+              </tr>
+              <tr>
+                <td class="lbl">Transport Halt:</td>
+                <td class="val" id="fpTransport">VELAGADURRU</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- ACADEMIC EDUCATION HISTORY TABLE -->
+        <div class="fp-card mt-4">
+          <div class="fp-card-header"><i class="fa-solid fa-graduation-cap"></i>Educational Qualifications</div>
+          <table class="custom-table edu-table">
+            <thead>
+              <tr>
+                <th>Qualification</th>
+                <th>Board / University</th>
+                <th>H.T. Roll No</th>
+                <th>Year of Passing</th>
+                <th>Institution</th>
+                <th>Obtained / Max Marks</th>
+                <th>Percentage</th>
+                <th>Grade Points</th>
+              </tr>
+            </thead>
+            <tbody id="fpEduTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- PARENT & GUARDIAN DETAILS -->
+        <div class="fp-details-grid mt-4">
+          <div class="fp-card">
+            <div class="fp-card-header"><i class="fa-solid fa-users"></i> Parents Information</div>
+            <table class="fp-table">
+              <tr>
+                <td class="lbl">Father Name:</td>
+                <td class="val" id="fpFatherName">-</td>
+              </tr>
+              <tr>
+                <td class="lbl">Father Occupation:</td>
+                <td class="val" id="fpFatherOccupation">-</td>
+              </tr>
+              <tr>
+                <td class="lbl">Father Mobile:</td>
+                <td class="val" id="fpFatherMobile">-</td>
+              </tr>
+              <tr>
+                <td class="lbl">Mother Name:</td>
+                <td class="val" id="fpMotherName">-</td>
+              </tr>
+              <tr>
+                <td class="lbl">Mother Occupation:</td>
+                <td class="val" id="fpMotherOccupation">-</td>
+              </tr>
+              <tr>
+                <td class="lbl">Mother Mobile:</td>
+                <td class="val" id="fpMotherMobile">-</td>
+              </tr>
+              <tr>
+                <td class="lbl">Annual Income:</td>
+                <td class="val" id="fpAnnualIncome">-</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="fp-card">
+            <div class="fp-card-header"><i class="fa-solid fa-house"></i> Permanent & Correspondence Address</div>
+            <table class="fp-table">
+              <tr>
+                <td class="lbl">Address:</td>
+                <td class="val" id="fpAddress">-</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- REMARKS SECTION -->
+        <div class="fp-card mt-4">
+          <div class="fp-card-header"><i class="fa-solid fa-note-sticky text-amber"></i> HOD & Faculty Remarks</div>
+          <div class="fp-remarks-box mt-2" id="fpStudentRemarks">
+            <span class="badge-no-remark"><i class="fa-solid fa-circle-info"></i> No Remark</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL: ADD / EDIT STUDENT FORM -->
+  <div id="formModal" class="modal-overlay hidden">
+    <div class="modal-card modal-lg" id="formModalCard">
+      <div class="modal-header modal-header-action">
+        <div>
+          <h3 id="formModalTitle"><i class="fa-solid fa-user-plus"></i> Add Student Record</h3>
+        </div>
+        <div class="modal-header-btns">
+          <button type="button" class="modal-close-btn" id="closeFormModalBtn">&times;</button>
+        </div>
+      </div>
+
+      <form id="studentForm" class="modal-form">
+        <input type="hidden" id="studentFormId">
+
+        <!-- Photo Upload Box -->
+        <div class="photo-upload-container">
+          <img id="formPhotoPreview" src="https://via.placeholder.com/60x70?text=Photo" class="photo-preview-img"
+            alt="Preview">
+          <div>
+            <label for="formPhotoFile"><strong>Upload Student Photo</strong></label>
+            <input type="file" id="formPhotoFile" accept="image/*" style="font-size: 0.82rem; margin-top: 4px;">
+            <input type="hidden" id="formPhotoUrl">
+          </div>
+        </div>
+
+        <!-- SECTION 1: PERSONAL INFORMATION -->
+        <div class="form-section-title"><i class="fa-solid fa-id-card"></i> 1. Personal Information</div>
+
+        <div class="form-group">
+          <label for="formRollNumber">Roll Number *</label>
+          <input type="text" id="formRollNumber" placeholder="e.g. 23A81A0412" required>
+        </div>
+
+        <div class="form-group">
+          <label for="formName">Full Name *</label>
+          <input type="text" id="formName" placeholder="e.g. ROHAN DESHMUKH" required>
+        </div>
+
+        <div class="form-group">
+          <label for="formAdmissionType">Admission Type *</label>
+          <select id="formAdmissionType" required>
+            <option value="Regular">Regular</option>
+            <option value="Lateral Entry">Lateral Entry</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formBranch">Branch *</label>
+          <select id="formBranch" required>
+            <option value="CSE">CSE - Computer Science & Engineering</option>
+            <option value="CST">CST - Computer Science & Technology</option>
+            <option value="AIML">AIML - Artificial Intelligence & Machine Learning</option>
+            <option value="CAI">CAI - Artificial Intelligence</option>
+            <option value="DS">DS - Data Science</option>
+            <option value="ECE">ECE - Electronics & Communication</option>
+            <option value="ECT">ECT - Electronics & Computer Tech</option>
+            <option value="EEE">EEE - Electrical & Electronics</option>
+            <option value="MEC">MEC - Mechanical Engineering</option>
+            <option value="CIVIL">CIVIL - Civil Engineering</option>
+            <option value="IT">IT - Information Technology</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formSection">Section *</label>
+          <select id="formSection" required>
+            <option value="A">Section A</option>
+            <option value="B">Section B</option>
+            <option value="C">Section C</option>
+            <option value="D">Section D</option>
+            <option value="E">Section E</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formYear">Academic Year *</label>
+          <select id="formYear" required>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formSemester">Semester *</label>
+          <select id="formSemester" required>
+            <option value="I Semester">I Semester</option>
+            <option value="II Semester">II Semester</option>
+            <option value="III Semester">III Semester</option>
+            <option value="IV Semester">IV Semester</option>
+            <option value="V Semester">V Semester</option>
+            <option value="VI Semester">VI Semester</option>
+            <option value="VII Semester">VII Semester</option>
+            <option value="VIII Semester">VIII Semester</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formAdmissionNo">Admission No</label>
+          <input type="text" id="formAdmissionNo" placeholder="088/ECE/2023">
+        </div>
+
+        <div class="form-group">
+          <label for="formDob">Date of Birth</label>
+          <input type="text" id="formDob" placeholder="15/01/2005">
+        </div>
+
+        <div class="form-group">
+          <label for="formGender">Gender</label>
+          <select id="formGender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formReligion">Religion</label>
+          <input type="text" id="formReligion" placeholder="Hindu">
+        </div>
+
+        <div class="form-group">
+          <label for="formNationality">Nationality</label>
+          <input type="text" id="formNationality" placeholder="Indian">
+        </div>
+
+        <div class="form-group">
+          <label for="formEntranceType">Entrance Type</label>
+          <input type="text" id="formEntranceType" placeholder="EAPCET">
+        </div>
+
+        <div class="form-group">
+          <label for="formCetRank">CET Rank</label>
+          <input type="text" id="formCetRank" placeholder="31200">
+        </div>
+
+        <div class="form-group">
+          <label for="formGpa">CGPA (0-10)</label>
+          <input type="number" id="formGpa" step="0.01" placeholder="8.25">
+        </div>
+
+        <div class="form-group">
+          <label for="formMarksPercent">Marks Percentage %</label>
+          <input type="number" id="formMarksPercent" step="0.1" placeholder="82.5">
+        </div>
+
+        <div class="form-group">
+          <label for="formAttendance">Attendance %</label>
+          <input type="number" id="formAttendance" step="0.1" placeholder="82.5">
+        </div>
+
+        <div class="form-group">
+          <label for="formPhone">Mobile / Phone Number</label>
+          <input type="tel" id="formPhone" maxlength="10" minlength="10" pattern="[0-9]{10}"
+            placeholder="10-digit mobile number" required>
+        </div>
+
+        <div class="form-group">
+          <label for="formPersonalEmail">Personal Email</label>
+          <input type="email" id="formPersonalEmail" placeholder="rohan.d@gmail.com">
+        </div>
+
+        <div class="form-group">
+          <label for="formCollegeEmail">College Email</label>
+          <input type="email" id="formCollegeEmail" placeholder="23A81A0412@sves.org.in">
+        </div>
+
+        <div class="form-group">
+          <label for="formAdhar">Aadhar Number</label>
+          <input type="text" id="formAdhar" placeholder="892192096333">
+        </div>
+
+        <div class="form-group">
+          <label for="formAbcId">ABC ID</label>
+          <input type="text" id="formAbcId" placeholder="255692439200">
+        </div>
+
+        <div class="form-group">
+          <label for="formBankAcc">Bank Account No</label>
+          <input type="text" id="formBankAcc" placeholder="061010023000555">
+        </div>
+
+        <div class="form-group">
+          <label for="formReimbursement">Fee Reimbursement</label>
+          <select id="formReimbursement">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formTransport">Transport Halt</label>
+          <input type="text" id="formTransport" placeholder="NIDADAVOLE">
+        </div>
+
+        <div class="form-group">
+          <label for="formRemarks"><strong>Student Remarks / Notes (HOD Remarks)</strong></label>
+          <textarea id="formRemarks" rows="2"
+            style="width:100%; padding:10px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-main); font-size:0.9rem;"
+            placeholder="Enter academic or disciplinary remarks..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="formFatherName">Father Name</label>
+          <input type="text" id="formFatherName" placeholder="PRAKASH DESHMUKH">
+        </div>
+
+        <div class="form-group">
+          <label for="formFatherOccupation">Father Occupation</label>
+          <input type="text" id="formFatherOccupation" placeholder="FARMER">
+        </div>
+
+        <div class="form-group">
+          <label for="formFatherMobile">Father Mobile</label>
+          <input type="tel" id="formFatherMobile" maxlength="10" minlength="10" pattern="[0-9]{10}"
+            placeholder="10-digit mobile number">
+        </div>
+
+        <div class="form-group">
+          <label for="formMotherName">Mother Name</label>
+          <input type="text" id="formMotherName" placeholder="SAVITRI DESHMUKH">
+        </div>
+
+        <div class="form-group">
+          <label for="formMotherOccupation">Mother Occupation</label>
+          <input type="text" id="formMotherOccupation" placeholder="HOUSE WIFE">
+        </div>
+
+        <div class="form-group">
+          <label for="formMotherMobile">Mother Mobile</label>
+          <input type="tel" id="formMotherMobile" maxlength="10" minlength="10" pattern="[0-9]{10}"
+            placeholder="10-digit mobile number">
+        </div>
+
+        <div class="form-group">
+          <label for="formAnnualIncome">Annual Income (₹)</label>
+          <input type="text" id="formAnnualIncome" placeholder="50000">
+        </div>
+
+        <div class="form-group">
+          <label for="formAddress">Permanent & Correspondence Address</label>
+          <textarea id="formAddress" rows="2"
+            style="width:100%; padding:10px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-main); font-size:0.9rem;"
+            placeholder="NIDADAVOLE WEST GODAVARI ANDHRA PRADESH"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelFormBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveStudentBtn">
+            <i class="fa-solid fa-floppy-disk"></i> Save Complete Student Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DEDICATED VIEW: BULK EXCEL DATA IMPORT AND BATCH ENGINE -->
+  <div id="bulkImportModal" class="modal-overlay hidden">
+    <div class="modal-card modal-xl">
+      <div class="modal-header flex-between">
+        <div class="modal-title-group" style="display:flex; align-items:center; gap:12px;">
+          <i class="fa-solid fa-file-excel text-emerald" style="font-size: 1.8rem;"></i>
+          <div>
+            <h3 class="m-0 text-xl font-bold">Bulk Student Data Import & Update</h3>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeImportModalBtn" title="Close">&times;</button>
+      </div>
+
+      <div class="modal-body py-4">
+        <div class="import-mode-section mb-4">
+          <label class="font-semibold mb-2 block text-indigo">
+            <i class="fa-solid fa-layer-group"></i> 1. Select Import & Update Operation Mode:
+          </label>
+          <div class="mode-cards-grid">
+            <label class="mode-card active" id="modeCardUpdate">
+              <input type="radio" name="importModeRadio" value="UPDATE" checked>
+              <div class="mode-card-content">
+                <div class="mode-card-title"><i class="fa-solid fa-pen-to-square text-amber"></i> Update Existing
+                  Records Only</div>
+              </div>
+            </label>
+
+            <label class="mode-card" id="modeCardAdd">
+              <input type="radio" name="importModeRadio" value="ADD">
+              <div class="mode-card-content">
+                <div class="mode-card-title"><i class="fa-solid fa-user-plus text-emerald"></i> Add New Students Only
+                </div>
+              </div>
+            </label>
+
+            <label class="mode-card" id="modeCardBoth">
+              <input type="radio" name="importModeRadio" value="BOTH">
+              <div class="mode-card-content">
+                <div class="mode-card-title"><i class="fa-solid fa-arrows-rotate text-indigo"></i> Smart Merge (Add New
+                  & Update Existing)</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="file-upload-section mb-4">
+          <div class="flex-between mb-2">
+            <label class="font-semibold text-indigo m-0"><i class="fa-solid fa-cloud-arrow-up"></i> 2. Upload Excel or
+              CSV File:</label>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="downloadTemplateBtn">
+              <i class="fa-solid fa-file-excel text-emerald"></i> Download Sample Excel (.xlsx) Template
+            </button>
+          </div>
+
+          <div class="dropzone-box" id="importDropzone">
+            <i class="fa-solid fa-file-csv dropzone-icon"></i>
+            <div class="dropzone-text">
+              <strong>Drag & Drop your CSV / Excel file here</strong>
+            </div>
+            <input type="file" id="importFileInput" accept=".csv, .xlsx, .xls" class="hidden">
+          </div>
+          <div id="selectedFileInfo" class="selected-file-info hidden mt-2">
+            <i class="fa-solid fa-file-circle-check text-emerald"></i>
+            <span id="selectedFileName">student_records.csv</span>
+            <button type="button" class="btn-icon-danger ml-2" id="removeSelectedFileBtn" title="Remove file"><i
+                class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+
+        <div id="importPreviewContainer" class="import-preview-container hidden">
+          <div class="preview-header flex-between mb-2">
+            <span class="font-semibold text-main"><i class="fa-solid fa-table"></i> Record Preview (<span
+                id="parsedRowCount">0</span> rows detected):</span>
+            <span class="badge badge-info" id="currentModeBadge">Mode: UPDATE ONLY</span>
+          </div>
+
+          <div class="table-responsive preview-table-wrapper mb-3" style="max-height: 240px; overflow-y: auto;">
+            <table class="data-table small-table">
+              <thead>
+                <tr>
+                  <th>Roll Number</th>
+                  <th>Student Name</th>
+                  <th>Branch</th>
+                  <th>Sem</th>
+                  <th>Attendance %</th>
+                  <th>CGPA</th>
+                  <th>Income (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="importPreviewTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="importReportCard" class="import-report-card hidden mt-3">
+          <h4 class="report-title mb-2"><i class="fa-solid fa-chart-pie"></i> Bulk Processing Completion Report</h4>
+          <div class="report-stats-grid">
+            <div class="stat-box box-total">
+              <div class="stat-num" id="reportTotal">0</div>
+              <div class="stat-lbl">Total Processed</div>
+            </div>
+            <div class="stat-box box-added">
+              <div class="stat-num" id="reportAdded">0</div>
+              <div class="stat-lbl">New Students Added</div>
+            </div>
+            <div class="stat-box box-updated">
+              <div class="stat-num" id="reportUpdated">0</div>
+              <div class="stat-lbl">Records Updated</div>
+            </div>
+            <div class="stat-box box-skipped">
+              <div class="stat-num" id="reportSkipped">0</div>
+              <div class="stat-lbl">Skipped / Ignored</div>
+            </div>
+          </div>
+          <div id="skippedRollsNotice" class="skipped-rolls-notice hidden mt-2">
+            <strong>Skipped Roll Numbers:</strong> <span id="skippedRollsList" class="text-amber"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn btn-outline" id="closeImportModalFooterBtn">
+          <i class="fa-solid fa-house"></i> Return to Dashboard
+        </button>
+        <button type="button" class="btn btn-emerald btn-lg" id="submitBulkImportBtn" disabled>
+          <i class="fa-solid fa-play"></i> Process Bulk Import / Update
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SINGLE DELETE CONFIRMATION -->
+  <div id="deleteModal" class="modal-overlay hidden">
+    <div class="modal-card modal-sm text-center">
+      <div class="danger-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h3>Confirm Student Removal</h3>
+      <p>Are you sure you want to permanently delete student record for <strong id="deleteStudentName">-</strong> (<span
+          id="deleteStudentRoll">-</span>)?</p>
+
+      <div class="modal-footer justify-center">
+        <button class="btn btn-outline" id="cancelDeleteBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn"><i class="fa-solid fa-trash"></i> Delete
+          Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BULK DELETE FILTERED CONFIRMATION -->
+  <div id="bulkDeleteModal" class="modal-overlay hidden">
+    <div class="modal-card modal-sm text-center">
+      <div class="danger-icon"><i class="fa-solid fa-trash-can"></i></div>
+      <h3>Confirm Bulk Deletion</h3>
+      <p>Are you sure you want to permanently delete <strong id="bulkDeleteCountDisplay">0</strong> student record(s)
+        currently matching your search & active filter rules?</p>
+      <p class="text-amber small mt-2"><i class="fa-solid fa-triangle-exclamation"></i> Warning: This action cannot be
+        undone!</p>
+
+      <div class="modal-footer justify-center mt-3">
+        <button class="btn btn-outline" id="cancelBulkDeleteBtn">Cancel</button>
+        <button class="btn btn-danger" id="confirmBulkDeleteBtn"><i class="fa-solid fa-trash"></i> Delete Filtered
+          Students</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CUSTOM EXCEL EXPORT ATTRIBUTE PICKER -->
+  <div id="excelExportModal" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header flex-between">
+        <div>
+          <h3 class="m-0 text-xl font-bold"><i class="fa-solid fa-file-excel text-emerald"></i> Custom Excel Export
+            Field Selection</h3>
+          <p class="text-muted small m-0">Select the student attributes you want to include in the exported Excel
+            (.xlsx) file.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="closeExcelExportModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body py-3">
+        <div class="excel-actions-bar mb-3">
+          <span class="font-semibold text-sm"><i class="fa-solid fa-square-check text-emerald"></i> <span
+              id="excelSelectedCount">0</span> Attributes Selected</span>
+          <div class="btn-group" style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="excelSelectAllBtn"><i
+                class="fa-solid fa-check-double"></i> Select All</button>
+            <button type="button" class="btn btn-sm btn-outline" id="excelSelectDefaultBtn"><i
+                class="fa-solid fa-rotate-left"></i> Standard Fields</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="excelDeselectAllBtn"><i
+                class="fa-solid fa-xmark"></i> Deselect All</button>
+          </div>
+        </div>
+
+        <div class="csv-fields-grid" id="excelFieldGrid"
+          style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:10px; max-height:360px; overflow-y:auto; padding:4px;">
+          <!-- Category 1: Academic & Roll -->
+          <div class="field-category-title">
+            <i class="fa-solid fa-graduation-cap"></i> Academic & Identification
+          </div>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="rollNumber" checked> Roll
+            Number</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="name" checked> Student
+            Name</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="admissionNo" checked>
+            Admission Number</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="admissionType" checked>
+            Admission Type</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="course" checked>
+            Course</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="branch" checked>
+            Branch</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="section" checked>
+            Section</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="year" checked> Academic
+            Year</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="semester" checked>
+            Semester</label>
+
+          <!-- Category 2: Performance -->
+          <div class="field-category-title">
+            <i class="fa-solid fa-chart-line"></i> Performance & Metrics
+          </div>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="gpa" checked> CGPA</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="marksPercentage" checked>
+            Marks Percentage</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="attendance" checked>
+            Attendance %</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="entranceType" checked>
+            Entrance Type</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="cetRank" checked> CET
+            Rank</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="seatCategory" checked>
+            Seat Category</label>
+
+          <!-- Category 3: Personal & Contact -->
+          <div class="field-category-title">
+            <i class="fa-solid fa-address-card"></i> Personal & Contact Info
+          </div>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="phone" checked> Phone /
+            Mobile</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="personalEmail" checked>
+            Personal Email</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="collegeEmail" checked>
+            College Email</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="dob" checked> Date of
+            Birth</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="gender" checked>
+            Gender</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="religion" checked>
+            Religion</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="nationality" checked>
+            Nationality</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="adharNo" checked> Aadhar
+            Number</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="abcId" checked> ABC
+            ID</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="bankAccNo" checked> Bank
+            Account No</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="reimbursement" checked>
+            Fee Reimbursement</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="transportHalt" checked>
+            Transport Halt</label>
+
+          <!-- Category 4: Parents & Address -->
+          <div class="field-category-title">
+            <i class="fa-solid fa-users"></i> Parents & Address Details
+          </div>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="fatherName" checked>
+            Father Name</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="fatherOccupation" checked>
+            Father Occupation</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="fatherMobile" checked>
+            Father Mobile</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="motherName" checked>
+            Mother Name</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="motherOccupation" checked>
+            Mother Occupation</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="motherMobile" checked>
+            Mother Mobile</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="annualIncome" checked>
+            Parents Annual Income</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="permanentAddress" checked>
+            Address</label>
+          <label class="excel-field-checkbox"><input type="checkbox" name="excelField" value="remarks" checked> Faculty
+            Remarks</label>
+        </div>
+      </div>
+
+      <div class="modal-footer flex-between flex-wrap gap-2">
+        <button type="button" class="btn btn-outline" id="cancelExcelExportBtn">Cancel</button>
+        <div class="export-format-btn-group" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-emerald" id="confirmDownloadExcelBtn">
+            <i class="fa-solid fa-file-excel"></i> Export Excel (.xlsx)
+          </button>
+          <button type="button" class="btn btn-indigo" id="confirmDownloadCsvBtn">
+            <i class="fa-solid fa-file-csv"></i> Export CSV (.csv)
+          </button>
+          <button type="button" class="btn btn-rose" id="confirmDownloadPdfBtn">
+            <i class="fa-solid fa-file-pdf"></i> Export PDF (.pdf)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT FACULTY DETAILS -->
+  <div id="facultyModal" class="modal-overlay hidden">
+    <div class="modal-card modal-md">
+      <div class="modal-header modal-header-action">
+        <div>
+          <h3 id="facultyModalTitle"><i class="fa-solid fa-user-gear"></i> Add Faculty Member</h3>
+        </div>
+        <button type="button" class="modal-close-btn" id="closeFacultyModalBtn">&times;</button>
+      </div>
+
+      <form id="facultyForm" class="modal-form">
+        <input type="hidden" id="facultyFormId">
+
+        <div class="form-group">
+          <label for="formFacultyId">Faculty ID *</label>
+          <input type="text" id="formFacultyId" placeholder="e.g. CSE-FAC-105" required>
+        </div>
+
+        <div class="form-group">
+          <label for="formFacultyName">Full Name *</label>
+          <input type="text" id="formFacultyName" placeholder="e.g. Dr. K. V. Sharma" required>
+        </div>
+
+        <div class="form-group">
+          <label for="formFacultyEmail">Email Address</label>
+          <input type="email" id="formFacultyEmail" placeholder="faculty@college.edu">
+        </div>
+
+        <div class="form-group">
+          <label for="formFacultyPhone">Phone Number (10 Digits)</label>
+          <input type="tel" id="formFacultyPhone" maxlength="10" minlength="10" pattern="[0-9]{10}"
+            placeholder="9876543210">
+        </div>
+
+        <div class="form-group">
+          <label for="formFacultyDepartment">Department *</label>
+          <select id="formFacultyDepartment" required>
+            <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+            <option value="Computer Science & Technology">Computer Science & Technology</option>
+            <option value="Artificial Intelligence & Machine Learning">Artificial Intelligence & Machine Learning
+            </option>
+            <option value="Artificial Intelligence">Artificial Intelligence</option>
+            <option value="Data Science">Data Science</option>
+            <option value="Electronics & Communication">Electronics & Communication</option>
+            <option value="Electronics & Computer Tech">Electronics & Computer Tech</option>
+            <option value="Electrical & Electronics">Electrical & Electronics</option>
+            <option value="Mechanical Engineering">Mechanical Engineering</option>
+            <option value="Civil Engineering">Civil Engineering</option>
+            <option value="Information Technology">Information Technology</option>
+            <option value="Basic Sciences & Humanities">Basic Sciences & Humanities</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formFacultyDesignation">Designation *</label>
+          <select id="formFacultyDesignation" required>
+            <option value="Professor">Professor</option>
+            <option value="Associate Professor">Associate Professor</option>
+            <option value="Assistant Professor">Assistant Professor</option>
+            <option value="HOD & Professor">HOD & Professor</option>
+            <option value="Lecturer">Lecturer</option>
+            <option value="Lab Assistant">Lab Assistant</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formFacultyRole">System Access Role *</label>
+          <select id="formFacultyRole" required>
+            <option value="faculty">Faculty User</option>
+            <option value="admin">System Admin / HOD</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="facultyPasswordGroup">
+          <label for="formFacultyPassword">Security Password <span id="pwdReqSpan">*</span></label>
+          <input type="password" id="formFacultyPassword" placeholder="Enter new security password">
+          <p class="text-amber small mt-1 hidden" id="adminOnlyPwdNotice">
+            <i class="fa-solid fa-shield-halved"></i> Security Notice: Only System Admin has access to change passwords.
+          </p>
+        </div>
+
+        <div class="form-group hidden" id="adminPwdResetGroup">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9rem; font-weight:500;">
+            <input type="checkbox" id="formFacultyResetPwdChance" style="width:16px; height:16px; cursor:pointer;">
+            <span>Allow Faculty 1-Time Password Change Access</span>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelFacultyBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveFacultyBtn">
+            <i class="fa-solid fa-floppy-disk"></i> Save Faculty Details
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: USER PROFILE & SECURITY SETTINGS (FULLSCREEN) -->
+  <div id="profileModal" class="modal-overlay modal-fullscreen-overlay hidden">
+    <div class="modal-card modal-fullscreen-card">
+      <div class="modal-header modal-header-action">
+        <div>
+          <h3 id="profileModalTitle"><i class="fa-solid fa-id-card"></i> User Profile</h3>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button type="button" class="btn btn-outline" id="editProfileToggleBtn">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+          </button>
+          <button type="button" class="modal-close-btn" id="closeProfileModalBtn">&times;</button>
+        </div>
+      </div>
+
+      <div style="overflow-y:auto; flex:1; padding: 32px;">
+        <!-- VIEW MODE -->
+        <div id="profileViewMode">
+          <div class="profile-fullscreen-grid">
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-id-badge text-indigo"></i> Faculty ID</span>
+              <span class="profile-field-value" id="pvFacultyId">—</span>
+            </div>
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-user text-primary"></i> Full Name</span>
+              <span class="profile-field-value" id="pvName">—</span>
+            </div>
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-envelope text-indigo"></i> Email Address</span>
+              <span class="profile-field-value" id="pvEmail">—</span>
+            </div>
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-phone text-emerald"></i> Phone Number</span>
+              <span class="profile-field-value" id="pvPhone">—</span>
+            </div>
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-building-user text-purple"></i> Department</span>
+              <span class="profile-field-value" id="pvDepartment">—</span>
+            </div>
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-user-tie text-amber"></i> Designation</span>
+              <span class="profile-field-value" id="pvDesignation">—</span>
+            </div>
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-shield-halved text-rose"></i> Account Role</span>
+              <span class="profile-field-value"><span class="badge badge-indigo" id="profileRoleBadge">Faculty
+                  User</span></span>
+            </div>
+            <div class="profile-field-card">
+              <span class="profile-field-label"><i class="fa-solid fa-key text-amber"></i> Password Status</span>
+              <span class="profile-field-value" id="pvPasswordStatus">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EDIT MODE -->
+        <form id="profileForm" class="hidden"
+          style="max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px;">
+          <div class="form-group">
+            <label for="profileFacultyId">Faculty ID</label>
+            <input type="text" id="profileFacultyId" readonly disabled style="opacity: 0.7; cursor: not-allowed;">
+          </div>
+          <div class="form-group">
+            <label for="profileName">Full Name *</label>
+            <input type="text" id="profileName" required>
+          </div>
+          <div class="form-group">
+            <label for="profileEmail">Email Address</label>
+            <input type="email" id="profileEmail" placeholder="your.name@college.edu">
+          </div>
+          <div class="form-group">
+            <label for="profilePhone">Phone Number</label>
+            <input type="tel" id="profilePhone" maxlength="10" minlength="10" pattern="[0-9]{10}"
+              placeholder="10-digit phone number">
+          </div>
+          <div class="form-group" id="profileDeptGroup">
+            <label for="profileDepartment">Department</label>
+            <input type="text" id="profileDepartment">
+          </div>
+          <div class="form-group" id="profileDesigGroup">
+            <label for="profileDesignation">Designation</label>
+            <input type="text" id="profileDesignation">
+          </div>
+          <div class="form-group" id="profilePasswordGroup">
+            <label for="profileNewPassword">Change Security Password</label>
+            <input type="password" id="profileNewPassword" placeholder="Enter new password (leave blank if unchanged)">
+            <div class="profile-pwd-notice mt-1" id="profilePwdNotice"></div>
+          </div>
+          <div class="modal-footer" style="padding: 0;">
+            <button type="button" class="btn btn-outline" id="cancelProfileBtn">Cancel Edit</button>
+            <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+              <i class="fa-solid fa-user-check"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

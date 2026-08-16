@@ -381,6 +381,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const switchToStudentDashBtn = document.getElementById('switchToStudentDashBtn');
   const facultyEmptyState = document.getElementById('facultyEmptyState');
 
+  // Mobile Side Navigation & Filter Drawer DOM Elements
+  const mobileNavToggleBtn = document.getElementById('mobileNavToggleBtn');
+  const mobileSideDrawer = document.getElementById('mobileSideDrawer');
+  const closeMobileDrawerBtn = document.getElementById('closeMobileDrawerBtn');
+  const applyMobileDrawerBtn = document.getElementById('applyMobileDrawerBtn');
+  const mobileNavStudentBtn = document.getElementById('mobileNavStudentBtn');
+  const mobileNavFacultyBtn = document.getElementById('mobileNavFacultyBtn');
+  const mobileNavProfileBtn = document.getElementById('mobileNavProfileBtn');
+  const mobileStudentFiltersGroup = document.getElementById('mobileStudentFiltersGroup');
+  const mobileFacultyFiltersGroup = document.getElementById('mobileFacultyFiltersGroup');
+
+  const mobileBranchFilter = document.getElementById('mobileBranchFilter');
+  const mobileSectionFilter = document.getElementById('mobileSectionFilter');
+  const mobileYearFilter = document.getElementById('mobileYearFilter');
+  const mobileSemesterFilter = document.getElementById('mobileSemesterFilter');
+  const mobileAdmissionTypeFilter = document.getElementById('mobileAdmissionTypeFilter');
+  const mobileClearFiltersBtn = document.getElementById('mobileClearFiltersBtn');
+
+  const mobileFacultyDeptFilter = document.getElementById('mobileFacultyDeptFilter');
+  const mobileFacultyDesigFilter = document.getElementById('mobileFacultyDesigFilter');
+  const mobileClearFacultyFiltersBtn = document.getElementById('mobileClearFacultyFiltersBtn');
+
+  const mobileAddStudentBtn = document.getElementById('mobileAddStudentBtn');
+  const mobileImportBtn = document.getElementById('mobileImportBtn');
+  const mobileExportBtn = document.getElementById('mobileExportBtn');
+  const mobileToggleSmartFilterBtn = document.getElementById('mobileToggleSmartFilterBtn');
+  const mobileGridViewBtn = document.getElementById('mobileGridViewBtn');
+  const mobileTableViewBtn = document.getElementById('mobileTableViewBtn');
+  const mobileBulkDeleteFilteredBtn = document.getElementById('mobileBulkDeleteFilteredBtn');
+  const mobileFilteredDeleteCount = document.getElementById('mobileFilteredDeleteCount');
+
   // ==========================================
   // INITIALIZATION & AUTH CHECK
   // ==========================================
@@ -469,12 +500,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (openAddModalBtn) openAddModalBtn.classList.remove('hidden');
         if (openImportModalBtn) openImportModalBtn.classList.remove('hidden');
         if (bulkDeleteFilteredBtn) bulkDeleteFilteredBtn.classList.remove('hidden');
+        if (mobileBulkDeleteFilteredBtn) mobileBulkDeleteFilteredBtn.classList.remove('hidden');
         if (facultyDashboardBtn) facultyDashboardBtn.classList.remove('hidden');
+        if (mobileNavFacultyBtn) mobileNavFacultyBtn.classList.remove('hidden');
       } else {
         if (openAddModalBtn) openAddModalBtn.classList.add('hidden');
         if (openImportModalBtn) openImportModalBtn.classList.add('hidden');
         if (bulkDeleteFilteredBtn) bulkDeleteFilteredBtn.classList.add('hidden');
+        if (mobileBulkDeleteFilteredBtn) mobileBulkDeleteFilteredBtn.classList.add('hidden');
         if (facultyDashboardBtn) facultyDashboardBtn.classList.add('hidden');
+        if (mobileNavFacultyBtn) mobileNavFacultyBtn.classList.add('hidden');
         if (facultyDashboardSection && !facultyDashboardSection.classList.contains('hidden')) {
           facultyDashboardSection.classList.add('hidden');
           studentDashboardSection.classList.remove('hidden');
@@ -681,6 +716,13 @@ document.addEventListener('DOMContentLoaded', () => {
         admissionTypeFilter.value = 'ALL';
       }
     }
+
+    // Sync to mobile filter dropdowns
+    if (mobileBranchFilter && branchFilter) mobileBranchFilter.value = branchFilter.value;
+    if (mobileSectionFilter && sectionFilter) mobileSectionFilter.value = sectionFilter.value;
+    if (mobileYearFilter && yearFilter) mobileYearFilter.value = yearFilter.value;
+    if (mobileSemesterFilter && semesterFilter) mobileSemesterFilter.value = semesterFilter.value;
+    if (mobileAdmissionTypeFilter && admissionTypeFilter) mobileAdmissionTypeFilter.value = admissionTypeFilter.value;
   }
 
   // ==========================================
@@ -744,6 +786,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update bulk delete count display
     if (filteredDeleteCount) {
       filteredDeleteCount.textContent = students.length;
+    }
+    if (mobileFilteredDeleteCount) {
+      mobileFilteredDeleteCount.textContent = students.length;
     }
 
     if (!students || students.length === 0) {
@@ -1257,9 +1302,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================
   // DYNAMIC SMART FILTER ENGINE LOGIC
   // ==========================================
+  const closeSmartFilterSectionBtn = document.getElementById('closeSmartFilterSectionBtn');
+  if (closeSmartFilterSectionBtn) {
+    closeSmartFilterSectionBtn.addEventListener('click', () => {
+      if (customFilterDashboardSection) customFilterDashboardSection.classList.add('hidden');
+    });
+  }
+
   if (toggleSmartFilterBtn) {
     toggleSmartFilterBtn.addEventListener('click', () => {
-      customFilterDashboardSection.classList.toggle('hidden');
+      if (customFilterDashboardSection) {
+        customFilterDashboardSection.classList.toggle('hidden');
+      }
     });
   }
 
@@ -3003,6 +3057,250 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Error updating profile:', err);
         showToast('Server connection error during profile update.', 'error');
       }
+    });
+  }
+
+  // ==========================================
+  // MOBILE SIDE NAVIGATION & FILTER DRAWER LOGIC
+  // ==========================================
+  if (mobileNavToggleBtn) {
+    mobileNavToggleBtn.addEventListener('click', openMobileDrawer);
+  }
+  if (closeMobileDrawerBtn) {
+    closeMobileDrawerBtn.addEventListener('click', closeMobileDrawer);
+  }
+  if (applyMobileDrawerBtn) {
+    applyMobileDrawerBtn.addEventListener('click', closeMobileDrawer);
+  }
+
+  // Close when clicking outside drawer content (on overlay)
+  if (mobileSideDrawer) {
+    mobileSideDrawer.addEventListener('click', (e) => {
+      if (e.target === mobileSideDrawer) {
+        closeMobileDrawer();
+      }
+    });
+  }
+
+  function openMobileDrawer() {
+    if (!mobileSideDrawer) return;
+
+    // Sync Student Filters
+    if (mobileBranchFilter && branchFilter) mobileBranchFilter.value = branchFilter.value;
+    if (mobileSectionFilter && sectionFilter) mobileSectionFilter.value = sectionFilter.value;
+    if (mobileYearFilter && yearFilter) mobileYearFilter.value = yearFilter.value;
+    if (mobileSemesterFilter && semesterFilter) mobileSemesterFilter.value = semesterFilter.value;
+    if (mobileAdmissionTypeFilter && admissionTypeFilter) mobileAdmissionTypeFilter.value = admissionTypeFilter.value;
+
+    // Check which dashboard is currently visible
+    const isFacultyDashActive = facultyDashboardSection && !facultyDashboardSection.classList.contains('hidden');
+
+    if (isFacultyDashActive) {
+      if (mobileStudentFiltersGroup) mobileStudentFiltersGroup.classList.add('hidden');
+      if (mobileFacultyFiltersGroup) mobileFacultyFiltersGroup.classList.remove('hidden');
+
+      // Sync Faculty Filters
+      if (mobileFacultyDeptFilter && facultyDeptFilter) {
+        mobileFacultyDeptFilter.innerHTML = facultyDeptFilter.innerHTML;
+        mobileFacultyDeptFilter.value = facultyDeptFilter.value;
+      }
+      if (mobileFacultyDesigFilter && facultyDesignationFilter) {
+        mobileFacultyDesigFilter.innerHTML = facultyDesignationFilter.innerHTML;
+        mobileFacultyDesigFilter.value = facultyDesignationFilter.value;
+      }
+    } else {
+      if (mobileStudentFiltersGroup) mobileStudentFiltersGroup.classList.remove('hidden');
+      if (mobileFacultyFiltersGroup) mobileFacultyFiltersGroup.classList.add('hidden');
+    }
+
+    // Role & Dashboard Context Check for Action Buttons
+    const isAdminOnStudentDash = currentUser && currentUser.role === 'admin' && !isFacultyDashActive;
+    if (isAdminOnStudentDash) {
+      if (mobileAddStudentBtn) mobileAddStudentBtn.classList.remove('hidden');
+      if (mobileImportBtn) mobileImportBtn.classList.remove('hidden');
+      if (mobileBulkDeleteFilteredBtn) mobileBulkDeleteFilteredBtn.classList.remove('hidden');
+    } else {
+      if (mobileAddStudentBtn) mobileAddStudentBtn.classList.add('hidden');
+      if (mobileImportBtn) mobileImportBtn.classList.add('hidden');
+      if (mobileBulkDeleteFilteredBtn) mobileBulkDeleteFilteredBtn.classList.add('hidden');
+    }
+
+    mobileSideDrawer.classList.remove('hidden');
+  }
+
+  function closeMobileDrawer() {
+    if (mobileSideDrawer) {
+      mobileSideDrawer.classList.add('hidden');
+    }
+  }
+
+  // Mobile Filter Change Events -> Sync to Main Toolbar & Reload Data
+  if (mobileBranchFilter) {
+    mobileBranchFilter.addEventListener('change', () => {
+      if (branchFilter) {
+        branchFilter.value = mobileBranchFilter.value;
+        populateToolbarFilterDropdowns();
+        loadDashboardData();
+      }
+    });
+  }
+
+  if (mobileSectionFilter) {
+    mobileSectionFilter.addEventListener('change', () => {
+      if (sectionFilter) {
+        sectionFilter.value = mobileSectionFilter.value;
+        populateToolbarFilterDropdowns();
+        loadDashboardData();
+      }
+    });
+  }
+
+  if (mobileYearFilter) {
+    mobileYearFilter.addEventListener('change', () => {
+      if (yearFilter) {
+        yearFilter.value = mobileYearFilter.value;
+        populateToolbarFilterDropdowns();
+        loadDashboardData();
+      }
+    });
+  }
+
+  if (mobileSemesterFilter) {
+    mobileSemesterFilter.addEventListener('change', () => {
+      if (semesterFilter) {
+        semesterFilter.value = mobileSemesterFilter.value;
+        populateToolbarFilterDropdowns();
+        loadDashboardData();
+      }
+    });
+  }
+
+  if (mobileAdmissionTypeFilter) {
+    mobileAdmissionTypeFilter.addEventListener('change', () => {
+      if (admissionTypeFilter) {
+        admissionTypeFilter.value = mobileAdmissionTypeFilter.value;
+        loadDashboardData();
+      }
+    });
+  }
+
+  if (mobileClearFiltersBtn) {
+    mobileClearFiltersBtn.addEventListener('click', () => {
+      resetAllFilters();
+      closeMobileDrawer();
+    });
+  }
+
+  // Mobile Faculty Filter Change Events
+  if (mobileFacultyDeptFilter) {
+    mobileFacultyDeptFilter.addEventListener('change', () => {
+      if (facultyDeptFilter) {
+        facultyDeptFilter.value = mobileFacultyDeptFilter.value;
+        const changeEvent = new Event('change');
+        facultyDeptFilter.dispatchEvent(changeEvent);
+      }
+    });
+  }
+
+  if (mobileFacultyDesigFilter) {
+    mobileFacultyDesigFilter.addEventListener('change', () => {
+      if (facultyDesignationFilter) {
+        facultyDesignationFilter.value = mobileFacultyDesigFilter.value;
+        const changeEvent = new Event('change');
+        facultyDesignationFilter.dispatchEvent(changeEvent);
+      }
+    });
+  }
+
+  if (mobileClearFacultyFiltersBtn) {
+    mobileClearFacultyFiltersBtn.addEventListener('click', () => {
+      if (clearFacultyFiltersBtn) clearFacultyFiltersBtn.click();
+      closeMobileDrawer();
+    });
+  }
+
+  // Mobile Navigation Tab Switchers
+  if (mobileNavStudentBtn) {
+    mobileNavStudentBtn.addEventListener('click', () => {
+      if (switchToStudentDashBtn) switchToStudentDashBtn.click();
+      else if (studentDashboardSection && facultyDashboardSection) {
+        facultyDashboardSection.classList.add('hidden');
+        studentDashboardSection.classList.remove('hidden');
+      }
+      closeMobileDrawer();
+    });
+  }
+
+  if (mobileNavFacultyBtn) {
+    mobileNavFacultyBtn.addEventListener('click', () => {
+      if (facultyDashboardBtn) facultyDashboardBtn.click();
+      closeMobileDrawer();
+    });
+  }
+
+  if (mobileNavProfileBtn) {
+    mobileNavProfileBtn.addEventListener('click', () => {
+      closeMobileDrawer();
+      openProfileModal();
+    });
+  }
+
+  // Mobile Action Shortcuts
+  if (mobileAddStudentBtn) {
+    mobileAddStudentBtn.addEventListener('click', () => {
+      closeMobileDrawer();
+      if (openAddModalBtn) openAddModalBtn.click();
+    });
+  }
+
+  if (mobileImportBtn) {
+    mobileImportBtn.addEventListener('click', () => {
+      closeMobileDrawer();
+      if (openImportModalBtn) openImportModalBtn.click();
+    });
+  }
+
+  if (mobileExportBtn) {
+    mobileExportBtn.addEventListener('click', () => {
+      closeMobileDrawer();
+      if (exportExcelBtn) exportExcelBtn.click();
+    });
+  }
+
+  if (mobileToggleSmartFilterBtn) {
+    mobileToggleSmartFilterBtn.addEventListener('click', () => {
+      closeMobileDrawer();
+      if (customFilterDashboardSection) {
+        customFilterDashboardSection.classList.remove('hidden');
+        setTimeout(() => {
+          customFilterDashboardSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      }
+    });
+  }
+
+  if (mobileGridViewBtn) {
+    mobileGridViewBtn.addEventListener('click', () => {
+      if (gridViewBtn) gridViewBtn.click();
+      mobileGridViewBtn.className = 'btn btn-indigo flex-1';
+      if (mobileTableViewBtn) mobileTableViewBtn.className = 'btn btn-outline flex-1';
+      closeMobileDrawer();
+    });
+  }
+
+  if (mobileTableViewBtn) {
+    mobileTableViewBtn.addEventListener('click', () => {
+      if (tableViewBtn) tableViewBtn.click();
+      mobileTableViewBtn.className = 'btn btn-indigo flex-1';
+      if (mobileGridViewBtn) mobileGridViewBtn.className = 'btn btn-outline flex-1';
+      closeMobileDrawer();
+    });
+  }
+
+  if (mobileBulkDeleteFilteredBtn) {
+    mobileBulkDeleteFilteredBtn.addEventListener('click', () => {
+      closeMobileDrawer();
+      if (bulkDeleteFilteredBtn) bulkDeleteFilteredBtn.click();
     });
   }
 });

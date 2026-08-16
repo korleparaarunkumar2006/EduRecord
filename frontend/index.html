@@ -66,13 +66,19 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="app-logo">
-          <i class="fa-solid fa-graduation-cap"></i>
+        <div class="header-brand-group">
+          <div class="app-logo">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <div class="app-brand-info">
+            <h1>EduRecord</h1>
+            <span class="brand-tag">Student Information System</span>
+          </div>
         </div>
-        <div class="app-brand-info">
-          <h1>EduRecord</h1>
-          <span class="brand-tag">Student Information System</span>
-        </div>
+        <button class="mobile-drawer-toggle-btn" id="mobileNavToggleBtn" title="Open Navigation & Filters">
+          <i class="fa-solid fa-bars-staggered"></i>
+          <span class="drawer-btn-label">Filters & Nav</span>
+        </button>
       </div>
 
       <div class="header-right">
@@ -100,6 +106,176 @@
         </button>
       </div>
     </header>
+
+    <!-- MOBILE SIDE NAVIGATION & FILTER DRAWER -->
+    <div id="mobileSideDrawer" class="mobile-drawer-overlay hidden">
+      <div class="mobile-drawer-content">
+        <div class="mobile-drawer-header">
+          <div class="mobile-drawer-title">
+            <i class="fa-solid fa-sliders text-indigo"></i>
+            <span>Menu & Filters</span>
+          </div>
+          <button type="button" class="mobile-drawer-close-btn" id="closeMobileDrawerBtn">&times;</button>
+        </div>
+
+        <div class="mobile-drawer-body">
+          <!-- DASHBOARD SWITCHER TABS -->
+          <div class="mobile-drawer-section">
+            <label class="mobile-section-label"><i class="fa-solid fa-compass"></i> Navigation</label>
+            <div class="mobile-nav-buttons">
+              <button type="button" class="btn btn-indigo btn-block" id="mobileNavStudentBtn">
+                <i class="fa-solid fa-graduation-cap"></i> Student Dashboard
+              </button>
+              <button type="button" class="btn btn-outline-primary btn-block mt-2 hidden" id="mobileNavFacultyBtn">
+                <i class="fa-solid fa-chalkboard-user"></i> Faculty Dashboard
+              </button>
+              <button type="button" class="btn btn-outline btn-block mt-2" id="mobileNavProfileBtn">
+                <i class="fa-solid fa-user-gear"></i> My Profile & Security
+              </button>
+            </div>
+          </div>
+
+          <!-- STUDENT FILTERS (VISIBLE WHEN STUDENT DASHBOARD IS ACTIVE) -->
+          <div class="mobile-drawer-section mt-3" id="mobileStudentFiltersGroup">
+            <label class="mobile-section-label"><i class="fa-solid fa-filter"></i> Student Records Filter</label>
+
+            <div class="mobile-filter-group mt-2">
+              <label for="mobileBranchFilter"><i class="fa-solid fa-network-wired"></i> Branch</label>
+              <select id="mobileBranchFilter" class="filter-select">
+                <option value="ALL">All Branches</option>
+                <option value="CSE">CSE - Computer Science & Engineering</option>
+                <option value="CST">CST - Computer Science & Technology</option>
+                <option value="AIML">AIML - Artificial Intelligence & Machine Learning</option>
+                <option value="CAI">CAI - Artificial Intelligence</option>
+                <option value="DS">DS - Data Science</option>
+                <option value="ECE">ECE - Electronics & Communication</option>
+                <option value="ECT">ECT - Electronics & Computer Tech</option>
+                <option value="EEE">EEE - Electrical & Electronics</option>
+                <option value="MEC">MEC - Mechanical Engineering</option>
+                <option value="CIVIL">CIVIL - Civil Engineering</option>
+                <option value="IT">IT - Information Technology</option>
+              </select>
+            </div>
+
+            <div class="mobile-filter-group mt-2">
+              <label for="mobileSectionFilter"><i class="fa-solid fa-cubes"></i> Section</label>
+              <select id="mobileSectionFilter" class="filter-select">
+                <option value="ALL">All Sections</option>
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+                <option value="C">Section C</option>
+                <option value="D">Section D</option>
+                <option value="E">Section E</option>
+              </select>
+            </div>
+
+            <div class="mobile-filter-group mt-2">
+              <label for="mobileYearFilter"><i class="fa-solid fa-graduation-cap"></i> Academic Year</label>
+              <select id="mobileYearFilter" class="filter-select">
+                <option value="ALL">All Academic Years</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
+
+            <div class="mobile-filter-group mt-2">
+              <label for="mobileSemesterFilter"><i class="fa-solid fa-layer-group"></i> Semester</label>
+              <select id="mobileSemesterFilter" class="filter-select">
+                <option value="ALL">All Semesters</option>
+                <option value="I Semester">I Semester</option>
+                <option value="II Semester">II Semester</option>
+                <option value="III Semester">III Semester</option>
+                <option value="IV Semester">IV Semester</option>
+                <option value="V Semester">V Semester</option>
+                <option value="VI Semester">VI Semester</option>
+                <option value="VII Semester">VII Semester</option>
+                <option value="VIII Semester">VIII Semester</option>
+              </select>
+            </div>
+
+            <div class="mobile-filter-group mt-2">
+              <label for="mobileAdmissionTypeFilter"><i class="fa-solid fa-user-graduate"></i> Admission Type</label>
+              <select id="mobileAdmissionTypeFilter" class="filter-select">
+                <option value="ALL">All Admission Types</option>
+                <option value="Regular">Regular</option>
+                <option value="Lateral Entry">Lateral Entry</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-purple btn-block mt-2" id="mobileToggleSmartFilterBtn">
+              <i class="fa-solid fa-sliders"></i> Dynamic Smart Filter Engine
+            </button>
+
+            <button type="button" class="btn btn-outline-danger btn-block mt-3" id="mobileClearFiltersBtn">
+              <i class="fa-solid fa-filter-circle-xmark"></i> Clear All Student Filters
+            </button>
+          </div>
+
+          <!-- FACULTY FILTERS (VISIBLE WHEN FACULTY DASHBOARD IS ACTIVE) -->
+          <div class="mobile-drawer-section mt-3 hidden" id="mobileFacultyFiltersGroup">
+            <label class="mobile-section-label"><i class="fa-solid fa-user-tie"></i> Faculty Records Filter</label>
+
+            <div class="mobile-filter-group mt-2">
+              <label for="mobileFacultyDeptFilter"><i class="fa-solid fa-building-user"></i> Department</label>
+              <select id="mobileFacultyDeptFilter" class="filter-select">
+                <option value="ALL">All Departments</option>
+              </select>
+            </div>
+
+            <div class="mobile-filter-group mt-2">
+              <label for="mobileFacultyDesigFilter"><i class="fa-solid fa-user-tie"></i> Designation</label>
+              <select id="mobileFacultyDesigFilter" class="filter-select">
+                <option value="ALL">All Designations</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-outline-danger btn-block mt-3" id="mobileClearFacultyFiltersBtn">
+              <i class="fa-solid fa-rotate"></i> Reset Faculty Filters
+            </button>
+          </div>
+
+          <!-- VIEW MODE TOGGLE SECTION -->
+          <div class="mobile-drawer-section mt-3">
+            <label class="mobile-section-label"><i class="fa-solid fa-border-all"></i> Display View Mode</label>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-indigo flex-1" id="mobileGridViewBtn">
+                <i class="fa-solid fa-grip"></i> Grid Cards
+              </button>
+              <button type="button" class="btn btn-outline flex-1" id="mobileTableViewBtn">
+                <i class="fa-solid fa-table"></i> Data Table
+              </button>
+            </div>
+          </div>
+
+          <!-- ACTION SHORTCUTS SECTION -->
+          <div class="mobile-drawer-section mt-4">
+            <label class="mobile-section-label"><i class="fa-solid fa-bolt"></i> Quick Actions</label>
+            <div class="mobile-action-buttons">
+              <button type="button" class="btn btn-emerald btn-block" id="mobileAddStudentBtn">
+                <i class="fa-solid fa-user-plus"></i> Add Student Record
+              </button>
+              <button type="button" class="btn btn-indigo btn-block mt-2" id="mobileImportBtn">
+                <i class="fa-solid fa-file-import"></i> Bulk Import / Update
+              </button>
+              <button type="button" class="btn btn-outline-emerald btn-block mt-2" id="mobileExportBtn">
+                <i class="fa-solid fa-file-export"></i> Export Data
+              </button>
+              <button type="button" class="btn btn-rose btn-block mt-2 hidden" id="mobileBulkDeleteFilteredBtn">
+                <i class="fa-solid fa-trash-can"></i> Delete Filtered (<span id="mobileFilteredDeleteCount">0</span>)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mobile-drawer-footer">
+          <button type="button" class="btn btn-primary btn-block" id="applyMobileDrawerBtn">
+            <i class="fa-solid fa-check"></i> Apply & Close Menu
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="main-container">
       <!-- STUDENT DASHBOARD VIEW SECTION -->
@@ -242,9 +418,14 @@
               <span>Smart Dynamic Student Filter</span>
               <span id="activeFilterBadge" class="perf-badge ml-2">All Records View</span>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-danger" id="dashResetRulesBtn">
-              <i class="fa-solid fa-rotate-left"></i> Reset All Filters
-            </button>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button type="button" class="btn btn-sm btn-outline-danger" id="dashResetRulesBtn">
+                <i class="fa-solid fa-rotate-left"></i> Reset Rules
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="closeSmartFilterSectionBtn">
+                <i class="fa-solid fa-xmark"></i> Close
+              </button>
+            </div>
           </div>
 
           <div class="custom-panel-body mt-3">
@@ -576,21 +757,23 @@
         <!-- ACADEMIC EDUCATION HISTORY TABLE -->
         <div class="fp-card mt-4">
           <div class="fp-card-header"><i class="fa-solid fa-graduation-cap"></i>Educational Qualifications</div>
-          <table class="custom-table edu-table">
-            <thead>
-              <tr>
-                <th>Qualification</th>
-                <th>Board / University</th>
-                <th>H.T. Roll No</th>
-                <th>Year of Passing</th>
-                <th>Institution</th>
-                <th>Obtained / Max Marks</th>
-                <th>Percentage</th>
-                <th>Grade Points</th>
-              </tr>
-            </thead>
-            <tbody id="fpEduTableBody"></tbody>
-          </table>
+          <div class="table-container">
+            <table class="custom-table edu-table">
+              <thead>
+                <tr>
+                  <th>Qualification</th>
+                  <th>Board / University</th>
+                  <th>H.T. Roll No</th>
+                  <th>Year of Passing</th>
+                  <th>Institution</th>
+                  <th>Obtained / Max Marks</th>
+                  <th>Percentage</th>
+                  <th>Grade Points</th>
+                </tr>
+              </thead>
+              <tbody id="fpEduTableBody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- PARENT & GUARDIAN DETAILS -->

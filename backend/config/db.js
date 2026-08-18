@@ -67,9 +67,9 @@ const connectDB = async () => {
     const salt = await bcrypt.genSalt(10);
     for (let f of initialFaculty) {
       const regex = new RegExp(`^${f.facultyId}$`, 'i');
-      const existingFac = await Faculty.findOne({ facultyId: regex });
+      let existingFac = await Faculty.findOne({ facultyId: regex });
+      const hashedPassword = await bcrypt.hash(f.passwordRaw, salt);
       if (!existingFac) {
-        const hashedPassword = await bcrypt.hash(f.passwordRaw, salt);
         await Faculty.create({
           name: f.name,
           facultyId: f.facultyId.toUpperCase(),
@@ -81,6 +81,10 @@ const connectDB = async () => {
           role: f.role,
           hasChangedPassword: f.hasChangedPassword || false
         });
+      } else {
+        existingFac.password = hashedPassword;
+        existingFac.role = f.role;
+        await existingFac.save();
       }
     }
 

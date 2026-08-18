@@ -3,19 +3,30 @@
 // Faculty ID format: DEPT-ROLE-3DIGITS  (see Faculty model)
 const initialFaculty = [
   {
-    name: 'Dr. Ramesh Kumar',
-    facultyId: 'CSE-ADMIN-001',
-    email: 'ramesh.kumar@sves.org.in',
+    name: 'Dr. K. V. Sharma',
+    facultyId: 'CSE-A-001',
+    email: 'admin.cse@sves.org.in',
     phoneNumber: '9876543210',
     passwordRaw: 'admin123',
     department: 'Computer Science & Engineering',
     designation: 'Professor & HOD',
     role: 'admin',
-    hasChangedPassword: true
+    hasChangedPassword: false
+  },
+  {
+    name: 'Dr. Ramesh Kumar',
+    facultyId: 'CSE-ADM-001',
+    email: 'ramesh.kumar@sves.org.in',
+    phoneNumber: '9876543211',
+    passwordRaw: 'admin123',
+    department: 'Computer Science & Engineering',
+    designation: 'Professor & HOD',
+    role: 'admin',
+    hasChangedPassword: false
   },
   {
     name: 'Ms. Priya Lakshmi',
-    facultyId: 'CSE-FAC-001',
+    facultyId: 'CSE-F-001',
     email: 'priya.lakshmi@sves.org.in',
     phoneNumber: '9123456780',
     passwordRaw: 'faculty123',
@@ -62,6 +73,30 @@ const initialStudents = [
     gpa: 8.5,
     marksPercentage: 85.0,
     attendance: 88.0,
+    educationDetails: [
+      {
+        qualification: '10th (SSC)',
+        board: 'BSEAP',
+        htNo: '2105123456',
+        yearOfPass: '2022',
+        institute: 'Z.P. HIGH SCHOOL, ELURU',
+        maxMarks: '600',
+        obtainedMarks: '576',
+        percentage: '96.0',
+        gradePoints: '9.8'
+      },
+      {
+        qualification: 'Intermediate (10+2)',
+        board: 'BIEAP',
+        htNo: '2405891234',
+        yearOfPass: '2024',
+        institute: 'SRI CHAITANYA JUNIOR COLLEGE',
+        maxMarks: '1000',
+        obtainedMarks: '965',
+        percentage: '96.5',
+        gradePoints: '9.7'
+      }
+    ],
     parentsDetails: {
       fatherName: 'SHARMA VENKATA RAO',
       fatherOccupation: 'GOVERNMENT EMPLOYEE',

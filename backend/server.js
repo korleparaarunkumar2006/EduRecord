@@ -1,7 +1,6 @@
 const express = require('express');
-const path = require('path');
 const cors = require('cors');
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
 const { connectDB, getDBState } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
@@ -12,24 +11,20 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Ensure DB is connected before handling requests
 app.use(async (req, res, next) => {
   if (!getDBState()) {
-    try {
-      await connectDB();
-    } catch (e) {
-      console.error('DB connect middleware error:', e);
-    }
+    try { await connectDB(); } catch (e) { console.error('DB connect middleware error:', e); }
   }
   next();
 });
-
-// Serve static frontend files from ../frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -42,23 +37,25 @@ app.get('/api/status', (req, res) => {
     status: 'online',
     timestamp: new Date(),
     databaseMode: getDBState() ? 'MongoDB Connected' : 'In-Memory DB Active',
-    security: 'High Security JWT Active'
+    security: 'High Security JWT Active',
+    version: '2.0 (MERN Stack)'
   });
 });
 
-// Serve frontend for any unhandled page request
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+// 404 for non-API routes (React handles its own routing)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ success: false, message: 'API route not found.' });
 });
 
-// Start Server & Connect Database when running locally
+// Start Server & Connect Database
 if (require.main === module || !process.env.VERCEL) {
   connectDB().then(() => {
     app.listen(PORT, () => {
       console.log(`===================================================`);
-      console.log(`🚀 College Student Details Portal Server running!`);
-      console.log(`🌐 Application URL: http://localhost:${PORT}`);
-      console.log(`🔐 High Security Faculty Auth & Search Engine Active`);
+      console.log(`🚀 EduRecord MERN Backend running!`);
+      console.log(`🌐 API URL: http://localhost:${PORT}/api`);
+      console.log(`⚛️  React Frontend: http://localhost:5173`);
+      console.log(`🔐 High Security JWT Auth Active`);
       console.log(`===================================================`);
     });
   });

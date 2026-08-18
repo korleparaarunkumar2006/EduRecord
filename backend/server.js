@@ -26,13 +26,13 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/faculty', facultyRoutes);
+// API Routes (supports both /api/ and direct paths)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/students', '/students'], studentRoutes);
+app.use(['/api/faculty', '/faculty'], facultyRoutes);
 
 // System Status endpoint
-app.get('/api/status', (req, res) => {
+app.get(['/api/status', '/status'], (req, res) => {
   res.json({
     status: 'online',
     timestamp: new Date(),

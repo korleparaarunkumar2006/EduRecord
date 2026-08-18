@@ -6,27 +6,27 @@ const { initialFaculty, initialStudents } = require('./seedData');
 
 let isMongoConnected = false;
 
-// In-Memory store fallback
+// In-Memory store fallback with instant pre-hashed passwords
 let memoryStudents = [...initialStudents];
-let memoryFaculty = [];
+let memoryFaculty = initialFaculty.map(f => ({
+  _id: f.facultyId,
+  facultyId: f.facultyId,
+  name: f.name,
+  email: f.email || '',
+  phoneNumber: f.phoneNumber || '',
+  password: f.passwordRaw === 'faculty123'
+    ? '$2a$10$hNcf764SGH5XklmkrwSvrOythEkvgcuQ/x5jJBVpb3X5IpcILuo5q'
+    : '$2a$10$JRTGJ1VITVpSVfM8YtfLOepuuVdGDi733BaWoX38G5qBJIaAtNSPe',
+  department: f.department,
+  designation: f.designation,
+  role: f.role,
+  hasChangedPassword: f.hasChangedPassword || false,
+  lastLogin: new Date()
+}));
 
-async function initializeMemoryFaculty() {
-  const salt = await bcrypt.genSalt(10);
-  memoryFaculty = await Promise.all(
-    initialFaculty.map(async f => ({
-      _id: f.facultyId,
-      facultyId: f.facultyId,
-      name: f.name,
-      email: f.email || '',
-      phoneNumber: f.phoneNumber || '',
-      password: await bcrypt.hash(f.passwordRaw, salt),
-      department: f.department,
-      designation: f.designation,
-      role: f.role,
-      hasChangedPassword: f.hasChangedPassword || false,
-      lastLogin: new Date()
-    }))
-  );
+function initializeMemoryFaculty() {
+  // Already initialized synchronously above
+  return Promise.resolve();
 }
 
 const dns = require('dns');

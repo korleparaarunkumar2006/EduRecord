@@ -59,8 +59,8 @@ if (fs.existsSync(clientDist)) {
   });
 }
 
-// Start Server & Connect Database
-if (require.main === module || !process.env.VERCEL) {
+// Start Server & Connect Database (Only when run directly via node backend/server.js)
+if (require.main === module) {
   connectDB().then(() => {
     app.listen(PORT, () => {
       console.log(`===================================================`);

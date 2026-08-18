@@ -36,17 +36,28 @@ const connectDB = async () => {
     return;
   }
 
-  const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/student_portal';
+  const mongoURI = process.env.MONGODB_URI;
+
+  // On Vercel / Cloud environments without Atlas URI, immediately use Memory DB
+  if (!mongoURI || ((process.env.VERCEL || process.env.NODE_ENV === 'production') && (mongoURI.includes('127.0.0.1') || mongoURI.includes('localhost')))) {
+    isMongoConnected = false;
+    if (memoryFaculty.length === 0) {
+      await initializeMemoryFaculty();
+    }
+    return;
+  }
 
   try {
-    // Ensure DNS resolution works for mongodb+srv on Windows networks
-    try {
-      dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
-    } catch (e) { }
+    // Only attempt DNS server override on local Windows environment
+    if (process.platform === 'win32' && !process.env.VERCEL) {
+      try {
+        dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+      } catch (e) { }
+    }
 
     mongoose.set('strictQuery', false);
     await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 10000 // 10s timeout for cloud connections like MongoDB Atlas
+      serverSelectionTimeoutMS: 3000 // 3s timeout for cloud Atlas connections
     });
     isMongoConnected = true;
     console.log('✅ Connected to MongoDB Atlas successfully.');
@@ -101,7 +112,9 @@ const connectDB = async () => {
     isMongoConnected = false;
     console.log('⚠️ MongoDB connection issue:', err.message);
     console.log('⚡ Switching to high-speed Memory DB mode with preloaded student & faculty records.');
-    await initializeMemoryFaculty();
+    if (memoryFaculty.length === 0) {
+      await initializeMemoryFaculty();
+    }
   }
 };
 

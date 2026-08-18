@@ -42,10 +42,22 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// 404 for non-API routes (React handles its own routing)
+// 404 for non-existent API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: 'API route not found.' });
 });
+
+// Serve compiled React frontend in Production / Vercel
+const path = require('path');
+const fs = require('fs');
+const clientDist = path.join(__dirname, '../client/dist');
+
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 // Start Server & Connect Database
 if (require.main === module || !process.env.VERCEL) {

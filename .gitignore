@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 package-lock.json
+dist/
+client/dist/
 
 # Environment Variables & Secrets
 .env

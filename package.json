@@ -2,7 +2,7 @@
   "name": "student-details-portal",
   "version": "2.0.0",
   "description": "EduRecord — MERN Stack College Student Details Portal",
-  "main": "server.js",
+  "main": "backend/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node backend/server.js",

@@ -3,6 +3,7 @@ import {
   FaArrowLeft, FaPenToSquare, FaTrash, FaIdCard,
   FaAddressBook, FaGraduationCap, FaUsers, FaChild
 } from 'react-icons/fa6';
+import { normalizePhotoUrl, handleImageError } from '../utils/imageHelper';
 
 export default function StudentDetailPage({ student: s, onBack, onEdit, onDelete, isAdmin }) {
   const [student, setStudent] = useState(s);
@@ -42,10 +43,11 @@ export default function StudentDetailPage({ student: s, onBack, onEdit, onDelete
         <div style={{ flexShrink: 0 }}>
           {student.photoUrl ? (
             <img
-              src={student.photoUrl}
+              src={normalizePhotoUrl(student.photoUrl)}
               alt={student.name}
               className="detail-photo"
-              onError={e => { e.target.style.display = 'none'; }}
+              referrerPolicy="no-referrer"
+              onError={e => handleImageError(e, student.name)}
             />
           ) : (
             <div style={{

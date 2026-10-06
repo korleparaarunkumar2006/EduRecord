@@ -56,8 +56,19 @@ export default function DashboardPage() {
 
   const handleApplySmartFilter = (filters) => {
     let queryParams = [];
-    if (filters.preset === 'High Performers (CGPA ≥ 8.5)') queryParams.push('eligibility=HIGH_PERFORMERS');
-    else if (filters.preset === 'Low Attendance (< 75%)') queryParams.push('maxAtt=74');
+    if (filters.preset === 'High Performers (CGPA ≥ 8.5)' || filters.minCgpa >= 8.5) {
+      queryParams.push('eligibility=HIGH_PERFORMERS');
+    }
+    if (filters.preset === 'Low Attendance (< 75%)' || (filters.maxAttendance < 100 && filters.maxAttendance <= 75)) {
+      queryParams.push(`maxAtt=${filters.maxAttendance}`);
+      queryParams.push('eligibility=LOW_ATTENDANCE');
+    } else if (filters.maxAttendance < 100) {
+      queryParams.push(`maxAtt=${filters.maxAttendance}`);
+    }
+    if (filters.minAttendance > 0) queryParams.push(`minAtt=${filters.minAttendance}`);
+    if (filters.branch && filters.branch !== 'ALL') queryParams.push(`branch=${filters.branch}`);
+    if (filters.year && filters.year !== 'ALL') queryParams.push(`year=${filters.year}`);
+    if (filters.semester && filters.semester !== 'ALL') queryParams.push(`semester=${encodeURIComponent(filters.semester)}`);
     navigate(`/students${queryParams.length ? '?' + queryParams.join('&') : ''}`);
   };
 
@@ -172,8 +183,6 @@ export default function DashboardPage() {
           <InfoRow label="Role" value={faculty?.role === 'admin' ? 'Admin / HOD' : 'Faculty'} />
           <InfoRow label="Department" value={faculty?.department} />
           <InfoRow label="Designation" value={faculty?.designation} />
-          <InfoRow label="Auth Status" value="✅ JWT Active (8h session)" />
-          <InfoRow label="Database" value="✅ MongoDB Connected" />
         </div>
       </div>
 

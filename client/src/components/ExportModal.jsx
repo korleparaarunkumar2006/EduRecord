@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  FaXmark, FaDownload, FaFileExcel, FaFileCsv, FaFilePdf,
+  FaXmark, FaDownload, FaFileExcel, FaFileCsv,
   FaCheckDouble, FaSquareCheck, FaSquare
 } from 'react-icons/fa6';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
 
 const ALL_FIELDS = [
@@ -69,7 +67,7 @@ const ALL_FIELDS = [
 ];
 
 export default function ExportModal({ students, onClose }) {
-  const [format, setFormat] = useState('pdf'); // 'pdf' | 'xlsx' | 'csv'
+  const [format, setFormat] = useState('xlsx'); // 'xlsx' | 'csv'
   const [selectedFields, setSelectedFields] = useState(ALL_FIELDS.map(f => f.id));
   const [isExporting, setIsExporting] = useState(false);
 
@@ -132,60 +130,25 @@ export default function ExportModal({ students, onClose }) {
       const activeFieldDefs = ALL_FIELDS.filter(f => selectedFields.includes(f.id));
       const fileName = `Student_Records_Export_${new Date().toISOString().slice(0, 10)}.${format}`;
 
-      if (format === 'pdf') {
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-        // Header Title
-        doc.setFontSize(16);
-        doc.setTextColor(30, 41, 59);
-        doc.text('STUDENT BIO-DATA & ACADEMIC RECORDS REPORT', 14, 15);
-
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139);
-        doc.text(`Generated Date: ${new Date().toLocaleDateString()} | Total Student Records: ${students.length}`, 14, 22);
-
-        const head = [activeFieldDefs.map(d => d.label)];
-        const body = students.map(s => activeFieldDefs.map(def => getFieldValue(s, def.id)));
-
-        autoTable(doc, {
-          head,
-          body,
-          startY: 26,
-          theme: 'grid',
-          styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
-          headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
-          alternateRowStyles: { fillColor: [248, 250, 252] },
-          didDrawPage: (data) => {
-            doc.setFontSize(8);
-            doc.setTextColor(148, 163, 184);
-            doc.text(`Page ${data.pageNumber}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
-          }
+      const rows = students.map(s => {
+        const row = {};
+        activeFieldDefs.forEach(def => {
+          row[def.label] = getFieldValue(s, def.id);
         });
+        return row;
+      });
 
-        doc.save(fileName);
-        toast.success(`🎉 Exported ${students.length} student record(s) to PDF!`);
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Students_Export');
+
+      if (format === 'csv') {
+        XLSX.writeFile(workbook, fileName, { bookType: 'csv' });
       } else {
-        const rows = students.map(s => {
-          const row = {};
-          activeFieldDefs.forEach(def => {
-            row[def.label] = getFieldValue(s, def.id);
-          });
-          return row;
-        });
-
-        const worksheet = XLSX.utils.json_to_sheet(rows);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Students_Export');
-
-        if (format === 'csv') {
-          XLSX.writeFile(workbook, fileName, { bookType: 'csv' });
-        } else {
-          XLSX.writeFile(workbook, fileName, { bookType: 'xlsx' });
-        }
-
-        toast.success(`🎉 Exported ${students.length} student record(s) to ${fileName}!`);
+        XLSX.writeFile(workbook, fileName, { bookType: 'xlsx' });
       }
 
+      toast.success(`🎉 Exported ${students.length} student record(s) to ${fileName}!`);
       onClose();
     } catch (err) {
       console.error(err);
@@ -210,16 +173,7 @@ export default function ExportModal({ students, onClose }) {
         <div className="modal-body">
           {/* Format Selection */}
           <div className="section-title">Select File Format</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-            <button
-              type="button"
-              className={`btn ${format === 'pdf' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setFormat('pdf')}
-              style={{ padding: '14px', justifyContent: 'center', gap: 8, fontSize: 13 }}
-            >
-              <FaFilePdf style={{ fontSize: 18, color: format === 'pdf' ? '#fff' : 'var(--rose)' }} />
-              PDF Document (.pdf)
-            </button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
             <button
               type="button"
               className={`btn ${format === 'xlsx' ? 'btn-primary' : 'btn-outline'}`}

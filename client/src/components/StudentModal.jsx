@@ -5,6 +5,7 @@ import {
   FaPenToSquare, FaEye, FaGraduationCap, FaIdCard, FaAddressBook, FaUsers
 } from 'react-icons/fa6';
 import { createStudent, updateStudent } from '../api';
+import { normalizePhotoUrl, handleImageError } from '../utils/imageHelper';
 import toast from 'react-hot-toast';
 
 const BRANCHES = ['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'];
@@ -115,7 +116,9 @@ export default function StudentModal({ student, onClose, onSaved }) {
   const [form, setForm] = useState(buildInitial(student));
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('personal'); // personal | academic | qualifications | contact | parents
-  const [photoMode, setPhotoMode] = useState('url'); // 'url' | 'upload'
+  const [photoMode, setPhotoMode] = useState(
+    student && student.photoUrl && student.photoUrl.startsWith('data:') ? 'upload' : 'url'
+  );
   const photoRef = useRef(null);
 
   useEffect(() => {
@@ -168,6 +171,7 @@ export default function StudentModal({ student, onClose, onSaved }) {
     try {
       const payload = {
         ...form,
+        photoUrl: normalizePhotoUrl(form.photoUrl),
         gpa: parseFloat(form.gpa) || 0,
         marksPercentage: parseFloat(form.marksPercentage) || 0,
         attendance: parseFloat(form.attendance) || 0,
@@ -259,7 +263,13 @@ export default function StudentModal({ student, onClose, onSaved }) {
                   borderRadius: 'var(--radius-lg)', marginBottom: 20
                 }}>
                   {form.photoUrl ? (
-                    <img src={form.photoUrl} alt={form.name} style={{ width: 80, height: 80, borderRadius: 14, objectFit: 'cover', border: '2px solid var(--indigo)' }} />
+                    <img
+                      src={normalizePhotoUrl(form.photoUrl)}
+                      alt={form.name}
+                      referrerPolicy="no-referrer"
+                      style={{ width: 80, height: 80, borderRadius: 14, objectFit: 'cover', border: '2px solid var(--indigo)' }}
+                      onError={(e) => handleImageError(e, form.name)}
+                    />
                   ) : (
                     <div style={{ width: 80, height: 80, borderRadius: 14, background: 'linear-gradient(135deg, var(--indigo), var(--purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: '#fff' }}>
                       {form.name?.charAt(0)}
@@ -447,7 +457,15 @@ export default function StudentModal({ student, onClose, onSaved }) {
                               }}
                               onClick={() => photoRef.current?.click()}
                             >
-                              {form.photoUrl ? <img src={form.photoUrl} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '📷'}
+                              {form.photoUrl ? (
+                                <img
+                                  src={normalizePhotoUrl(form.photoUrl)}
+                                  alt="preview"
+                                  referrerPolicy="no-referrer"
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => handleImageError(e, form.name)}
+                                />
+                              ) : '📷'}
                             </div>
                             <div style={{ flex: 1 }}>
                               <input ref={photoRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
@@ -463,9 +481,36 @@ export default function StudentModal({ student, onClose, onSaved }) {
                           </div>
                         )}
                         {photoMode === 'url' && (
-                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                            {form.photoUrl && <img src={form.photoUrl} alt="preview" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />}
-                            <input className="form-input" value={form.photoUrl} onChange={e => set('photoUrl', e.target.value)} placeholder="https://example.com/photo.jpg" style={{ flex: 1 }} />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                              {form.photoUrl && (
+                                <img
+                                  src={normalizePhotoUrl(form.photoUrl)}
+                                  alt="preview"
+                                  referrerPolicy="no-referrer"
+                                  style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border-color)', flexShrink: 0 }}
+                                  onError={(e) => handleImageError(e, form.name)}
+                                />
+                              )}
+                              <input
+                                className="form-input"
+                                value={form.photoUrl}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  set('photoUrl', normalizePhotoUrl(val));
+                                }}
+                                placeholder="Paste image URL (Google Drive, Dropbox, GitHub, web image...)"
+                                style={{ flex: 1 }}
+                              />
+                              {form.photoUrl && (
+                                <button type="button" className="btn btn-outline-rose btn-sm" onClick={() => set('photoUrl', '')} title="Clear photo">
+                                  <FaTrash />
+                                </button>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                              💡 Cloud links from Google Drive, Dropbox, or GitHub are automatically converted to direct images.
+                            </div>
                           </div>
                         )}
                       </div>
@@ -501,15 +546,44 @@ export default function StudentModal({ student, onClose, onSaved }) {
                       </div>
                       <div className="form-group">
                         <label className="form-label">Year of Study</label>
-                        <select className="form-select" value={form.year} onChange={e => set('year', e.target.value)}>
-                          <option value="1">1st Year</option><option value="2">2nd Year</option>
-                          <option value="3">3rd Year</option><option value="4">4th Year</option>
+                        <select
+                          className="form-select"
+                          value={form.year}
+                          onChange={e => {
+                            const yr = e.target.value;
+                            let defaultSem = 'I Semester';
+                            if (yr === '1') defaultSem = 'I Semester';
+                            else if (yr === '2') defaultSem = 'III Semester';
+                            else if (yr === '3') defaultSem = 'V Semester';
+                            else if (yr === '4') defaultSem = 'VII Semester';
+                            setForm(p => ({ ...p, year: yr, semester: defaultSem }));
+                          }}
+                        >
+                          <option value="1">1st Year</option>
+                          <option value="2">2nd Year</option>
+                          <option value="3">3rd Year</option>
+                          <option value="4">4th Year</option>
                         </select>
                       </div>
                       <div className="form-group">
                         <label className="form-label">Semester</label>
                         <select className="form-select" value={form.semester} onChange={e => set('semester', e.target.value)}>
-                          {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+                          <optgroup label="1st Year">
+                            <option value="I Semester">I Semester (1)</option>
+                            <option value="II Semester">II Semester (2)</option>
+                          </optgroup>
+                          <optgroup label="2nd Year">
+                            <option value="III Semester">III Semester (3)</option>
+                            <option value="IV Semester">IV Semester (4)</option>
+                          </optgroup>
+                          <optgroup label="3rd Year">
+                            <option value="V Semester">V Semester (5)</option>
+                            <option value="VI Semester">VI Semester (6)</option>
+                          </optgroup>
+                          <optgroup label="4th Year">
+                            <option value="VII Semester">VII Semester (7)</option>
+                            <option value="VIII Semester">VIII Semester (8)</option>
+                          </optgroup>
                         </select>
                       </div>
                       <div className="form-group">

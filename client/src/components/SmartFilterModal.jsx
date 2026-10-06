@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FaXmark, FaSliders, FaRotateLeft, FaCheck, FaStar, FaTriangleExclamation, FaHandHoldingDollar, FaBus } from 'react-icons/fa6';
+import { FaXmark, FaSliders, FaRotateLeft, FaCheck, FaStar, FaTriangleExclamation, FaBus } from 'react-icons/fa6';
 
 export const DEFAULT_SMART_FILTERS = {
   minCgpa: 0,
@@ -16,7 +16,6 @@ export const DEFAULT_SMART_FILTERS = {
   admissionType: 'ALL',
   gender: 'ALL',
   seatCategory: 'ALL',
-  reimbursement: 'ALL',
   entranceType: 'ALL',
   transportHalt: 'ALL',
   preset: null,
@@ -62,12 +61,6 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
         admissionType: 'Lateral Entry',
         preset: 'Lateral Entry'
       });
-    } else if (presetName === 'reimbursement') {
-      setLocalFilters({
-        ...DEFAULT_SMART_FILTERS,
-        reimbursement: 'Yes',
-        preset: 'Fee Reimbursement (Yes)'
-      });
     } else if (presetName === 'managementQuota') {
       setLocalFilters({
         ...DEFAULT_SMART_FILTERS,
@@ -86,6 +79,17 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
     onApply(localFilters);
     onClose();
   };
+
+  const SEMESTER_OPTIONS = [
+    { value: 'I Semester', label: '1st Year: I Semester (1)' },
+    { value: 'II Semester', label: '1st Year: II Semester (2)' },
+    { value: 'III Semester', label: '2nd Year: III Semester (3)' },
+    { value: 'IV Semester', label: '2nd Year: IV Semester (4)' },
+    { value: 'V Semester', label: '3rd Year: V Semester (5)' },
+    { value: 'VI Semester', label: '3rd Year: VI Semester (6)' },
+    { value: 'VII Semester', label: '4th Year: VII Semester (7)' },
+    { value: 'VIII Semester', label: '4th Year: VIII Semester (8)' },
+  ];
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
@@ -132,14 +136,6 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               style={{ justifyContent: 'center', padding: '9px 10px', fontSize: 13 }}
             >
               🚀 Lateral Entry
-            </button>
-            <button
-              type="button"
-              className={`btn ${localFilters.preset === 'Fee Reimbursement (Yes)' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => applyPreset('reimbursement')}
-              style={{ justifyContent: 'center', padding: '9px 10px', fontSize: 13 }}
-            >
-              <FaHandHoldingDollar /> Fee Reimbursement
             </button>
             <button
               type="button"
@@ -274,8 +270,8 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               <label className="form-label">Semester</label>
               <select className="form-select" value={localFilters.semester} onChange={e => set('semester', e.target.value)}>
                 <option value="ALL">All Semesters</option>
-                {['I Semester','II Semester','III Semester','IV Semester','V Semester','VI Semester','VII Semester','VIII Semester'].map(s => (
-                  <option key={s} value={s}>{s}</option>
+                {SEMESTER_OPTIONS.map(s => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
             </div>
@@ -299,9 +295,9 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
             </div>
           </div>
 
-          {/* Extended Quota & Scholarship Attributes */}
-          <div className="section-title">💰 Quota, Entrance & Scholarship Attributes</div>
-          <div className="form-grid-3 mb-3">
+          {/* Extended Quota & Entrance Attributes */}
+          <div className="section-title">💰 Quota & Entrance Attributes</div>
+          <div className="form-grid-2 mb-3">
             <div className="form-group">
               <label className="form-label">Seat Category Quota</label>
               <select className="form-select" value={localFilters.seatCategory} onChange={e => set('seatCategory', e.target.value)}>
@@ -322,15 +318,6 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
                 <option value="ICET">ICET</option>
                 <option value="PGECET">PGECET</option>
                 <option value="SPOT">SPOT</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Fee Reimbursement</label>
-              <select className="form-select" value={localFilters.reimbursement} onChange={e => set('reimbursement', e.target.value)}>
-                <option value="ALL">All Statuses</option>
-                <option value="Yes">Yes (Eligible)</option>
-                <option value="No">No (Full Fee)</option>
               </select>
             </div>
           </div>

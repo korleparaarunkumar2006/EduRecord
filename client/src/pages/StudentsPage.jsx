@@ -13,6 +13,7 @@ import ExportModal from '../components/ExportModal';
 import SmartFilterModal, { DEFAULT_SMART_FILTERS } from '../components/SmartFilterModal';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
+import { normalizePhotoUrl, handleImageError } from '../utils/imageHelper';
 
 const BRANCHES = ['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'];
 const SECTIONS = ['A','B','C','D','E'];
@@ -43,11 +44,14 @@ export default function StudentsPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const eligibility = params.get('eligibility');
-    const maxAtt = params.get('maxAtt');
+    const maxAtt = params.get('maxAtt') || params.get('maxAttendance');
+    const minAtt = params.get('minAtt') || params.get('minAttendance');
     if (eligibility === 'HIGH_PERFORMERS') {
       setSmartFilters(p => ({ ...p, minCgpa: 8.5, preset: 'High Performers (CGPA ≥ 8.5)' }));
-    } else if (maxAtt) {
-      setSmartFilters(p => ({ ...p, maxAttendance: parseFloat(maxAtt) || 74, preset: 'Low Attendance (<75%)' }));
+    } else if (eligibility === 'LOW_ATTENDANCE' || maxAtt) {
+      setSmartFilters(p => ({ ...p, maxAttendance: parseFloat(maxAtt) || 74, preset: 'Low Attendance (< 75%)' }));
+    } else if (minAtt) {
+      setSmartFilters(p => ({ ...p, minAttendance: parseFloat(minAtt) || 0 }));
     }
   }, [location.search]);
 
@@ -63,17 +67,34 @@ export default function StudentsPage() {
         admissionType: filters.admissionType !== 'ALL' ? filters.admissionType : (smartFilters.admissionType !== 'ALL' ? smartFilters.admissionType : undefined),
         gender: smartFilters.gender !== 'ALL' ? smartFilters.gender : undefined,
         seatCategory: smartFilters.seatCategory !== 'ALL' ? smartFilters.seatCategory : undefined,
-        reimbursement: smartFilters.reimbursement !== 'ALL' ? smartFilters.reimbursement : undefined,
         entranceType: smartFilters.entranceType !== 'ALL' ? smartFilters.entranceType : undefined,
         minGpa: smartFilters.minCgpa > 0 ? smartFilters.minCgpa : undefined,
         maxGpa: smartFilters.maxCgpa < 10 ? smartFilters.maxCgpa : undefined,
+        minAtt: smartFilters.minAttendance > 0 ? smartFilters.minAttendance : undefined,
+        maxAtt: smartFilters.maxAttendance < 100 ? smartFilters.maxAttendance : undefined,
         minAttendance: smartFilters.minAttendance > 0 ? smartFilters.minAttendance : undefined,
         maxAttendance: smartFilters.maxAttendance < 100 ? smartFilters.maxAttendance : undefined,
         minMarks: smartFilters.minMarks > 0 ? smartFilters.minMarks : undefined,
         maxMarks: smartFilters.maxMarks < 100 ? smartFilters.maxMarks : undefined,
       };
       const res = await searchStudents(params);
-      if (res.data.success) setStudents(res.data.students || []);
+      if (res.data.success) {
+        let list = res.data.students || [];
+        // Ensure robust filter on client side as well:
+        if (smartFilters.maxAttendance < 100) {
+          list = list.filter(s => (s.attendance || 0) <= smartFilters.maxAttendance);
+        }
+        if (smartFilters.minAttendance > 0) {
+          list = list.filter(s => (s.attendance || 0) >= smartFilters.minAttendance);
+        }
+        if (smartFilters.minCgpa > 0) {
+          list = list.filter(s => (s.gpa || 0) >= smartFilters.minCgpa);
+        }
+        if (smartFilters.maxCgpa < 10) {
+          list = list.filter(s => (s.gpa || 0) <= smartFilters.maxCgpa);
+        }
+        setStudents(list);
+      }
     } catch (e) {
       toast.error('Failed to load students.');
     } finally {
@@ -123,7 +144,7 @@ export default function StudentsPage() {
     smartFilters.minAttendance > 0 || smartFilters.maxAttendance < 100 ||
     smartFilters.minMarks > 0 || smartFilters.maxMarks < 100 ||
     smartFilters.gender !== 'ALL' || smartFilters.seatCategory !== 'ALL' ||
-    smartFilters.reimbursement !== 'ALL' || smartFilters.entranceType !== 'ALL' ||
+    smartFilters.entranceType !== 'ALL' ||
     smartFilters.preset;
 
   const activeFilterCount =
@@ -243,7 +264,22 @@ export default function StudentsPage() {
         </select>
         <select className="filter-select" value={filters.semester} onChange={e => setFilters(p => ({ ...p, semester: e.target.value }))}>
           <option value="ALL">All Semesters</option>
-          {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+          <optgroup label="1st Year">
+            <option value="I Semester">I Semester (1)</option>
+            <option value="II Semester">II Semester (2)</option>
+          </optgroup>
+          <optgroup label="2nd Year">
+            <option value="III Semester">III Semester (3)</option>
+            <option value="IV Semester">IV Semester (4)</option>
+          </optgroup>
+          <optgroup label="3rd Year">
+            <option value="V Semester">V Semester (5)</option>
+            <option value="VI Semester">VI Semester (6)</option>
+          </optgroup>
+          <optgroup label="4th Year">
+            <option value="VII Semester">VII Semester (7)</option>
+            <option value="VIII Semester">VIII Semester (8)</option>
+          </optgroup>
         </select>
         <select className="filter-select" value={filters.admissionType} onChange={e => setFilters(p => ({ ...p, admissionType: e.target.value }))}>
           <option value="ALL">All Admission Types</option>
@@ -321,7 +357,29 @@ export default function StudentsPage() {
                   <td>
                     <span style={{ fontWeight: 700, color: 'var(--indigo-light)', fontSize: 12 }}>{s.rollNumber}</span>
                   </td>
-                  <td style={{ fontWeight: 600 }}>{s.name}</td>
+                  <td style={{ fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {s.photoUrl ? (
+                        <img
+                          src={normalizePhotoUrl(s.photoUrl)}
+                          alt={s.name}
+                          referrerPolicy="no-referrer"
+                          style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border-color)', flexShrink: 0 }}
+                          onError={(e) => handleImageError(e, s.name)}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 30, height: 30, borderRadius: 8,
+                          background: 'linear-gradient(135deg, var(--indigo), var(--purple))',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, color: '#fff', fontSize: 12, flexShrink: 0
+                        }}>
+                          {s.name?.charAt(0)}
+                        </div>
+                      )}
+                      <span>{s.name}</span>
+                    </div>
+                  </td>
                   <td><span className="badge badge-indigo">{s.branch}</span></td>
                   <td>{s.section} / {s.year}Y</td>
                   <td>{s.semester}</td>
@@ -403,9 +461,11 @@ function StudentCard({ student: s, isAdmin, selected, onToggleSelect, onView, on
           )}
           {s.photoUrl ? (
             <img
-              src={s.photoUrl}
+              src={normalizePhotoUrl(s.photoUrl)}
               alt={s.name}
+              referrerPolicy="no-referrer"
               style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover', border: '2px solid var(--indigo)' }}
+              onError={(e) => handleImageError(e, s.name)}
             />
           ) : (
             <div style={{

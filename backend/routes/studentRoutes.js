@@ -19,6 +19,37 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+function normalizePhotoUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  let url = rawUrl.trim();
+  if (!url || url.startsWith('data:') || url.startsWith('blob:')) return url;
+
+  // Google Drive sharing links
+  const gDriveMatch = url.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=view&)?id=)|docs\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/);
+  if (gDriveMatch && gDriveMatch[1]) {
+    return `https://drive.google.com/thumbnail?id=${gDriveMatch[1]}&sz=w1000`;
+  }
+
+  // Dropbox
+  if (url.includes('dropbox.com')) {
+    if (url.includes('dl=0')) return url.replace('dl=0', 'raw=1');
+    if (!url.includes('raw=1')) return url.includes('?') ? `${url}&raw=1` : `${url}?raw=1`;
+    return url;
+  }
+
+  // GitHub
+  const githubMatch = url.match(/https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/);
+  if (githubMatch) {
+    return `https://raw.githubusercontent.com/${githubMatch[1]}/${githubMatch[2]}/${githubMatch[3]}/${githubMatch[4]}`;
+  }
+
+  // Imgur
+  const imgurMatch = url.match(/^https?:\/\/(?:i\.)?imgur\.com\/([a-zA-Z0-9]+)$/);
+  if (imgurMatch) return `https://i.imgur.com/${imgurMatch[1]}.jpg`;
+
+  return url;
+}
+
 function jsonToCSV(items, selectedFields = null) {
   if (!items || items.length === 0) return '';
 
@@ -90,7 +121,11 @@ function jsonToCSV(items, selectedFields = null) {
 // @desc    Get aggregate metrics dynamically calculated for selected Branch, Section, Year, Semester & Range Filters
 router.get('/analytics', async (req, res) => {
   try {
-    const { branch, section, year, semester, eligibility, minGpa, maxGpa, minAtt, maxAtt, admissionType } = req.query;
+    const { branch, section, year, semester, eligibility, minGpa, maxGpa, minAtt, maxAtt, minAttendance, maxAttendance, minCgpa, maxCgpa, admissionType } = req.query;
+    const effectiveMinAtt = minAtt !== undefined && minAtt !== '' ? minAtt : minAttendance;
+    const effectiveMaxAtt = maxAtt !== undefined && maxAtt !== '' ? maxAtt : maxAttendance;
+    const effectiveMinGpa = minGpa !== undefined && minGpa !== '' ? minGpa : minCgpa;
+    const effectiveMaxGpa = maxGpa !== undefined && maxGpa !== '' ? maxGpa : maxCgpa;
     const isMongo = getDBState();
     let students = [];
 
@@ -120,23 +155,25 @@ router.get('/analytics', async (req, res) => {
         students = students.filter(s => (s.attendance || 0) < 75 || (s.gpa || 0) < 6.5);
       } else if (eligibility === 'HIGH_PERFORMERS') {
         students = students.filter(s => (s.gpa || 0) >= 8.5);
+      } else if (eligibility === 'LOW_ATTENDANCE') {
+        students = students.filter(s => (s.attendance || 0) < 75);
       }
     }
 
-    if (minGpa !== undefined && minGpa !== '') {
-      const minG = parseFloat(minGpa);
+    if (effectiveMinGpa !== undefined && effectiveMinGpa !== '') {
+      const minG = parseFloat(effectiveMinGpa);
       students = students.filter(s => (s.gpa || 0) >= minG);
     }
-    if (maxGpa !== undefined && maxGpa !== '') {
-      const maxG = parseFloat(maxGpa);
+    if (effectiveMaxGpa !== undefined && effectiveMaxGpa !== '') {
+      const maxG = parseFloat(effectiveMaxGpa);
       students = students.filter(s => (s.gpa || 0) <= maxG);
     }
-    if (minAtt !== undefined && minAtt !== '') {
-      const minA = parseFloat(minAtt);
+    if (effectiveMinAtt !== undefined && effectiveMinAtt !== '') {
+      const minA = parseFloat(effectiveMinAtt);
       students = students.filter(s => (s.attendance || 0) >= minA);
     }
-    if (maxAtt !== undefined && maxAtt !== '') {
-      const maxA = parseFloat(maxAtt);
+    if (effectiveMaxAtt !== undefined && effectiveMaxAtt !== '') {
+      const maxA = parseFloat(effectiveMaxAtt);
       students = students.filter(s => (s.attendance || 0) <= maxA);
     }
 
@@ -305,9 +342,15 @@ router.get('/search', async (req, res) => {
     const {
       q, branch, section, year, semester, eligibility, admissionType,
       minGpa, maxGpa, minAtt, maxAtt, minMarks, maxMarks,
+      minAttendance, maxAttendance, minCgpa, maxCgpa,
       gender, minAge, maxAge, entranceType, seatCategory, religion, reimbursement,
       minCetRank, maxCetRank
     } = req.query;
+
+    const effectiveMinAtt = minAtt !== undefined && minAtt !== '' ? minAtt : minAttendance;
+    const effectiveMaxAtt = maxAtt !== undefined && maxAtt !== '' ? maxAtt : maxAttendance;
+    const effectiveMinGpa = minGpa !== undefined && minGpa !== '' ? minGpa : minCgpa;
+    const effectiveMaxGpa = maxGpa !== undefined && maxGpa !== '' ? maxGpa : maxCgpa;
 
     const queryStr = (q || '').trim().toLowerCase();
     const isMongo = getDBState();
@@ -371,21 +414,23 @@ router.get('/search', async (req, res) => {
           if (!((s.attendance || 0) < 75 || (s.gpa || 0) < 6.5)) return false;
         } else if (eligibility === 'HIGH_PERFORMERS') {
           if (!((s.gpa || 0) >= 8.5)) return false;
+        } else if (eligibility === 'LOW_ATTENDANCE') {
+          if (!((s.attendance || 0) < 75)) return false;
         }
       }
 
-      if (minGpa !== undefined && minGpa !== '') {
-        if ((s.gpa || 0) < parseFloat(minGpa)) return false;
+      if (effectiveMinGpa !== undefined && effectiveMinGpa !== '') {
+        if ((s.gpa || 0) < parseFloat(effectiveMinGpa)) return false;
       }
-      if (maxGpa !== undefined && maxGpa !== '') {
-        if ((s.gpa || 0) > parseFloat(maxGpa)) return false;
+      if (effectiveMaxGpa !== undefined && effectiveMaxGpa !== '') {
+        if ((s.gpa || 0) > parseFloat(effectiveMaxGpa)) return false;
       }
 
-      if (minAtt !== undefined && minAtt !== '') {
-        if ((s.attendance || 0) < parseFloat(minAtt)) return false;
+      if (effectiveMinAtt !== undefined && effectiveMinAtt !== '') {
+        if ((s.attendance || 0) < parseFloat(effectiveMinAtt)) return false;
       }
-      if (maxAtt !== undefined && maxAtt !== '') {
-        if ((s.attendance || 0) > parseFloat(maxAtt)) return false;
+      if (effectiveMaxAtt !== undefined && effectiveMaxAtt !== '') {
+        if ((s.attendance || 0) > parseFloat(effectiveMaxAtt)) return false;
       }
 
       const marksVal = s.marksPercentage !== undefined ? s.marksPercentage : ((s.gpa || 0) * 10);
@@ -509,6 +554,9 @@ router.post('/', requireAdmin, async (req, res) => {
     }
 
     const formattedRoll = body.rollNumber.trim().toUpperCase();
+    if (body.photoUrl) {
+      body.photoUrl = normalizePhotoUrl(body.photoUrl);
+    }
     const isMongo = getDBState();
 
     if (isMongo) {
@@ -559,6 +607,9 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    if (req.body.photoUrl !== undefined) {
+      req.body.photoUrl = normalizePhotoUrl(req.body.photoUrl);
+    }
     const isMongo = getDBState();
 
     if (isMongo) {
@@ -738,6 +789,7 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
         marksPercentage: Math.min(Math.max(parseFloat(getVal(data, ['marksPercentage', 'Marks Percentage', 'Marks %', 'Percentage', 'marks_percentage']) || '80.0') || 80.0, 0), 100),
         seatCategory: getVal(data, ['seatCategory', 'Seat Category', 'Quota', 'Seat Quota Category', 'seat_category']) || 'CONVENOR',
         remarks: getVal(data, ['remarks', 'Faculty Remarks', 'Remarks', 'faculty_remarks']) || '',
+        photoUrl: normalizePhotoUrl(getVal(data, ['photoUrl', 'Photo URL', 'Photo Link', 'photo_url', 'Photo', 'photo', 'Image', 'image', 'Student Photo']) || ''),
         parentsDetails: {
           fatherName: (getVal(data, ['fatherName', 'Father Name', 'father_name']) || (data.parentsDetails && data.parentsDetails.fatherName) || '').toUpperCase(),
           fatherOccupation: getVal(data, ['fatherOccupation', 'Father Occupation', 'father_occupation']) || '',
@@ -822,6 +874,7 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
       });
       check('seatCategory', ['seatCategory', 'Seat Category', 'Quota', 'Seat Quota Category', 'seat_category']);
       check('remarks', ['remarks', 'Faculty Remarks', 'Remarks', 'faculty_remarks']);
+      check('photoUrl', ['photoUrl', 'Photo URL', 'Photo Link', 'photo_url', 'Photo', 'photo', 'Image', 'image', 'Student Photo'], v => normalizePhotoUrl(String(v || '')));
 
       const parentObj = {};
       const checkParent = (pKey, keys, transformFn) => {

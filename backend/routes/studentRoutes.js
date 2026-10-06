@@ -132,6 +132,48 @@ function getBranchVariants(abbr) {
   return ALIASES[canon] || [abbr];
 }
 
+// Enforces UPPERCASE on all free-text student fields.
+// Skips: emails, phone, dob, photoUrl, numeric fields,
+//        and controlled-value fields (admissionType, semester, reimbursement).
+function sanitizeStudentFields(body) {
+  if (!body || typeof body !== 'object') return body;
+  const up = (v) => (v !== undefined && v !== null && String(v).trim() !== '') ? String(v).trim().toUpperCase() : v;
+  const result = { ...body };
+
+  // Free-text fields → UPPERCASE
+  [
+    'name', 'rollNumber', 'admissionNo', 'course', 'section',
+    'gender', 'religion', 'nationality', 'entranceType', 'seatCategory',
+    'adharNo', 'abcId', 'bankAccNo', 'transportHalt', 'remarks', 'cetRank',
+  ].forEach(f => {
+    if (result[f] !== undefined && result[f] !== null && result[f] !== '') {
+      result[f] = up(result[f]);
+    }
+  });
+
+  // Branch → normalize to canonical abbreviation (already uppercase)
+  if (result.branch !== undefined && result.branch !== null) {
+    result.branch = normalizeBranch(result.branch);
+  }
+
+  // photoUrl → normalize cloud share links
+  if (result.photoUrl !== undefined) {
+    result.photoUrl = normalizePhotoUrl(result.photoUrl);
+  }
+
+  // parentsDetails sub-fields → UPPERCASE
+  if (result.parentsDetails && typeof result.parentsDetails === 'object') {
+    const pd = { ...result.parentsDetails };
+    ['fatherName', 'motherName', 'fatherOccupation', 'motherOccupation',
+     'permanentAddress', 'correspondenceAddress'].forEach(f => {
+      if (pd[f] !== undefined && pd[f] !== null && pd[f] !== '') pd[f] = up(pd[f]);
+    });
+    result.parentsDetails = pd;
+  }
+
+  return result;
+}
+
 function jsonToCSV(items, selectedFields = null) {
   if (!items || items.length === 0) return '';
 
@@ -637,13 +679,8 @@ router.post('/', requireAdmin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Roll Number, Name, and Branch are required.' });
     }
 
-    const formattedRoll = body.rollNumber.trim().toUpperCase();
-    if (body.photoUrl) {
-      body.photoUrl = normalizePhotoUrl(body.photoUrl);
-    }
-    if (body.branch) {
-      body.branch = normalizeBranch(body.branch);
-    }
+    const sanitized = sanitizeStudentFields({ ...body, rollNumber: body.rollNumber.trim().toUpperCase() });
+    const formattedRoll = sanitized.rollNumber;
     const isMongo = getDBState();
 
     if (isMongo) {
@@ -653,7 +690,7 @@ router.post('/', requireAdmin, async (req, res) => {
       }
 
       const newStudent = await Student.create({
-        ...body,
+        ...sanitized,
         rollNumber: formattedRoll
       });
 
@@ -671,7 +708,7 @@ router.post('/', requireAdmin, async (req, res) => {
 
       const newStudent = {
         _id: String(Date.now()),
-        ...body,
+        ...sanitized,
         rollNumber: formattedRoll
       };
 
@@ -694,21 +731,16 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    if (req.body.photoUrl !== undefined) {
-      req.body.photoUrl = normalizePhotoUrl(req.body.photoUrl);
-    }
-    if (req.body.branch !== undefined) {
-      req.body.branch = normalizeBranch(req.body.branch);
-    }
+    const sanitized = sanitizeStudentFields({ ...req.body });
     const isMongo = getDBState();
 
     if (isMongo) {
       let updatedStudent = null;
       if (mongoose.Types.ObjectId.isValid(id)) {
-        updatedStudent = await Student.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+        updatedStudent = await Student.findByIdAndUpdate(id, sanitized, { new: true, runValidators: true });
       }
       if (!updatedStudent) {
-        updatedStudent = await Student.findOneAndUpdate({ rollNumber: { $regex: new RegExp(`^${id}$`, 'i') } }, req.body, { new: true, runValidators: true });
+        updatedStudent = await Student.findOneAndUpdate({ rollNumber: { $regex: new RegExp(`^${id}$`, 'i') } }, sanitized, { new: true, runValidators: true });
       }
       if (!updatedStudent) {
         return res.status(404).json({ success: false, message: 'Student record not found.' });
@@ -725,7 +757,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
         return res.status(404).json({ success: false, message: 'Student record not found.' });
       }
 
-      list[index] = { ...list[index], ...req.body };
+      list[index] = { ...list[index], ...sanitized };
       setMemoryStudents(list);
 
       return res.json({
@@ -971,7 +1003,7 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
         }
       };
 
-      return studentObj;
+      return sanitizeStudentFields(studentObj);
     };
 
     const buildPartialUpdatePayload = (data) => {

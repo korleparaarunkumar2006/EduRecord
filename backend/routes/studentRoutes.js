@@ -50,6 +50,68 @@ function normalizePhotoUrl(rawUrl) {
   return url;
 }
 
+// Normalizes any branch name variant to the canonical abbreviation used by filters
+function normalizeBranch(raw) {
+  if (!raw) return 'ECE';
+  const b = String(raw).trim().toUpperCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^A-Z0-9 &]/g, '');
+
+  const KNOWN = ['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'];
+  if (KNOWN.includes(b)) return b;
+
+  const MAP = [
+    ['COMPUTER SCIENCE AND ENGINEERING', 'CSE'],
+    ['COMPUTER SCIENCE & ENGINEERING', 'CSE'],
+    ['COMPUTER SCIENCE ENGINEERING', 'CSE'],
+    ['B.TECH CSE', 'CSE'],
+    ['BTECH CSE', 'CSE'],
+    ['COMPUTER SCIENCE AND TECHNOLOGY', 'CST'],
+    ['COMPUTER SCIENCE & TECHNOLOGY', 'CST'],
+    ['COMPUTER SCIENCE TECHNOLOGY', 'CST'],
+    ['ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING', 'AIML'],
+    ['ARTIFICIAL INTELLIGENCE & MACHINE LEARNING', 'AIML'],
+    ['AI AND ML', 'AIML'],
+    ['AI & ML', 'AIML'],
+    ['COMPUTER AND ARTIFICIAL INTELLIGENCE', 'CAI'],
+    ['COMPUTER & ARTIFICIAL INTELLIGENCE', 'CAI'],
+    ['COMPUTER ARTIFICIAL INTELLIGENCE', 'CAI'],
+    ['DATA SCIENCE AND ENGINEERING', 'DS'],
+    ['DATA SCIENCE & ENGINEERING', 'DS'],
+    ['DATA SCIENCE', 'DS'],
+    ['ELECTRONICS AND COMMUNICATION ENGINEERING', 'ECE'],
+    ['ELECTRONICS & COMMUNICATION ENGINEERING', 'ECE'],
+    ['ELECTRONICS AND COMMUNICATION', 'ECE'],
+    ['ELECTRONICS & COMMUNICATION', 'ECE'],
+    ['ELECTRONICS COMMUNICATION ENGINEERING', 'ECE'],
+    ['ELECTRONICS AND COMPUTER TECHNOLOGY', 'ECT'],
+    ['ELECTRONICS & COMPUTER TECHNOLOGY', 'ECT'],
+    ['ELECTRONICS COMPUTER TECHNOLOGY', 'ECT'],
+    ['ELECTRONICS AND COMMUNICATION TECHNOLOGY', 'ECT'],
+    ['ELECTRICAL AND ELECTRONICS ENGINEERING', 'EEE'],
+    ['ELECTRICAL & ELECTRONICS ENGINEERING', 'EEE'],
+    ['ELECTRICAL ELECTRONICS ENGINEERING', 'EEE'],
+    ['ELECTRICAL AND ELECTRONICS', 'EEE'],
+    ['MECHANICAL ENGINEERING', 'MEC'],
+    ['MECHANICAL', 'MEC'],
+    ['MECH', 'MEC'],
+    ['CIVIL ENGINEERING', 'CIVIL'],
+    ['CIVIL ENGG', 'CIVIL'],
+    ['INFORMATION TECHNOLOGY', 'IT'],
+    ['INFORMATION TECH', 'IT'],
+  ];
+
+  for (const [pattern, abbr] of MAP) {
+    if (b === pattern || b.includes(pattern)) return abbr;
+  }
+
+  // Last resort: strip spaces and check against known list
+  const stripped = b.replace(/\s+/g, '');
+  if (KNOWN.includes(stripped)) return stripped;
+
+  return stripped.slice(0, 10) || 'ECE';
+}
+
 function jsonToCSV(items, selectedFields = null) {
   if (!items || items.length === 0) return '';
 
@@ -557,6 +619,9 @@ router.post('/', requireAdmin, async (req, res) => {
     if (body.photoUrl) {
       body.photoUrl = normalizePhotoUrl(body.photoUrl);
     }
+    if (body.branch) {
+      body.branch = normalizeBranch(body.branch);
+    }
     const isMongo = getDBState();
 
     if (isMongo) {
@@ -609,6 +674,9 @@ router.put('/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     if (req.body.photoUrl !== undefined) {
       req.body.photoUrl = normalizePhotoUrl(req.body.photoUrl);
+    }
+    if (req.body.branch !== undefined) {
+      req.body.branch = normalizeBranch(req.body.branch);
     }
     const isMongo = getDBState();
 
@@ -742,12 +810,91 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
       return undefined;
     };
 
+    // Maps full branch names / common variants → canonical abbreviation
+    const normalizeBranch = (raw) => {
+      if (!raw) return 'ECE';
+      const b = raw.trim().toUpperCase()
+        .replace(/\s+/g, ' ')
+        .replace(/[^A-Z0-9 &]/g, '');
+
+      // Already a known abbreviation
+      const KNOWN = ['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'];
+      if (KNOWN.includes(b)) return b;
+
+      // Full-name / alias mapping (order matters — longer/more-specific first)
+      const MAP = [
+        // CSE variants
+        ['COMPUTER SCIENCE AND ENGINEERING', 'CSE'],
+        ['COMPUTER SCIENCE & ENGINEERING', 'CSE'],
+        ['COMPUTER SCIENCE ENGINEERING', 'CSE'],
+        ['B.TECH CSE', 'CSE'],
+        ['BTECH CSE', 'CSE'],
+        // CST variants
+        ['COMPUTER SCIENCE AND TECHNOLOGY', 'CST'],
+        ['COMPUTER SCIENCE & TECHNOLOGY', 'CST'],
+        ['COMPUTER SCIENCE TECHNOLOGY', 'CST'],
+        // AIML variants
+        ['ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING', 'AIML'],
+        ['ARTIFICIAL INTELLIGENCE & MACHINE LEARNING', 'AIML'],
+        ['AI AND ML', 'AIML'],
+        ['AI & ML', 'AIML'],
+        ['AIML', 'AIML'],
+        // CAI variants
+        ['COMPUTER AND ARTIFICIAL INTELLIGENCE', 'CAI'],
+        ['COMPUTER & ARTIFICIAL INTELLIGENCE', 'CAI'],
+        ['COMPUTER ARTIFICIAL INTELLIGENCE', 'CAI'],
+        // Data Science variants
+        ['DATA SCIENCE', 'DS'],
+        ['DATA SCIENCE AND ENGINEERING', 'DS'],
+        ['DATA SCIENCE & ENGINEERING', 'DS'],
+        // ECE variants
+        ['ELECTRONICS AND COMMUNICATION ENGINEERING', 'ECE'],
+        ['ELECTRONICS & COMMUNICATION ENGINEERING', 'ECE'],
+        ['ELECTRONICS AND COMMUNICATION', 'ECE'],
+        ['ELECTRONICS & COMMUNICATION', 'ECE'],
+        ['ELECTRONICS COMMUNICATION ENGINEERING', 'ECE'],
+        // ECT variants
+        ['ELECTRONICS AND COMPUTER TECHNOLOGY', 'ECT'],
+        ['ELECTRONICS & COMPUTER TECHNOLOGY', 'ECT'],
+        ['ELECTRONICS COMPUTER TECHNOLOGY', 'ECT'],
+        ['ELECTRONICS AND COMMUNICATION TECHNOLOGY', 'ECT'],
+        // EEE variants
+        ['ELECTRICAL AND ELECTRONICS ENGINEERING', 'EEE'],
+        ['ELECTRICAL & ELECTRONICS ENGINEERING', 'EEE'],
+        ['ELECTRICAL ELECTRONICS ENGINEERING', 'EEE'],
+        ['ELECTRICAL AND ELECTRONICS', 'EEE'],
+        // Mechanical variants
+        ['MECHANICAL ENGINEERING', 'MEC'],
+        ['MECHANICAL', 'MEC'],
+        ['MECH', 'MEC'],
+        // Civil variants
+        ['CIVIL ENGINEERING', 'CIVIL'],
+        ['CIVIL ENGG', 'CIVIL'],
+        // IT variants
+        ['INFORMATION TECHNOLOGY', 'IT'],
+        ['INFORMATION TECH', 'IT'],
+      ];
+
+      for (const [pattern, abbr] of MAP) {
+        if (b === pattern || b.startsWith(pattern + ' ') || b.endsWith(' ' + pattern) || b.includes(pattern)) {
+          return abbr;
+        }
+      }
+
+      // Partial abbreviation fallback — take only uppercase letters if short enough
+      const lettersOnly = b.replace(/[^A-Z]/g, '');
+      if (lettersOnly.length <= 5 && KNOWN.includes(lettersOnly)) return lettersOnly;
+
+      // Return cleaned-up version as-is (won't match filters but won't crash)
+      return b.replace(/\s+/g, '').slice(0, 10);
+    };
+
     const sanitizeStudentData = (data) => {
       const rollNo = getVal(data, ['rollNumber', 'Roll Number', 'Roll No', 'rollNo', 'ROLL NO', 'Roll', 'ht_no', 'hallticket_no', 'roll_number']);
       if (!rollNo) return null;
 
       const formattedRoll = rollNo.toUpperCase();
-      const rawBranch = (getVal(data, ['branch', 'Branch', 'Department', 'department']) || 'ECE').toUpperCase();
+      const rawBranch = normalizeBranch(getVal(data, ['branch', 'Branch', 'Department', 'department']));
 
       const rawSec = (getVal(data, ['section', 'Section', 'sec']) || 'A').toUpperCase();
       const secMatch = rawSec.match(/[A-E]/);

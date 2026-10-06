@@ -112,6 +112,26 @@ function normalizeBranch(raw) {
   return stripped.slice(0, 10) || 'ECE';
 }
 
+// Returns all known aliases (full names + abbreviation) for a canonical branch abbreviation.
+// Used in search/analytics to match students whose branch was stored as a full name.
+function getBranchVariants(abbr) {
+  const ALIASES = {
+    CSE:   ['CSE', 'Computer Science and Engineering', 'Computer Science & Engineering', 'Computer Science Engineering', 'COMPUTER SCIENCE AND ENGINEERING', 'COMPUTER SCIENCE & ENGINEERING', 'COMPUTER SCIENCE ENGINEERING', 'B.Tech CSE', 'BTech CSE'],
+    CST:   ['CST', 'Computer Science and Technology', 'Computer Science & Technology', 'Computer Science Technology', 'COMPUTER SCIENCE AND TECHNOLOGY', 'COMPUTER SCIENCE & TECHNOLOGY'],
+    AIML:  ['AIML', 'Artificial Intelligence and Machine Learning', 'Artificial Intelligence & Machine Learning', 'AI and ML', 'AI & ML', 'ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING', 'ARTIFICIAL INTELLIGENCE & MACHINE LEARNING'],
+    CAI:   ['CAI', 'Computer and Artificial Intelligence', 'Computer & Artificial Intelligence', 'Computer Artificial Intelligence', 'COMPUTER AND ARTIFICIAL INTELLIGENCE'],
+    DS:    ['DS', 'Data Science', 'Data Science and Engineering', 'Data Science & Engineering', 'DATA SCIENCE', 'DATA SCIENCE AND ENGINEERING'],
+    ECE:   ['ECE', 'Electronics and Communication Engineering', 'Electronics & Communication Engineering', 'Electronics and Communication', 'Electronics Communication Engineering', 'ELECTRONICS AND COMMUNICATION ENGINEERING', 'ELECTRONICS & COMMUNICATION ENGINEERING', 'ELECTRONICS AND COMMUNICATION'],
+    ECT:   ['ECT', 'Electronics and Computer Technology', 'Electronics & Computer Technology', 'Electronics Computer Technology', 'Electronics and Communication Technology', 'ELECTRONICS AND COMPUTER TECHNOLOGY', 'ELECTRONICS AND COMMUNICATION TECHNOLOGY'],
+    EEE:   ['EEE', 'Electrical and Electronics Engineering', 'Electrical & Electronics Engineering', 'Electrical Electronics Engineering', 'Electrical and Electronics', 'ELECTRICAL AND ELECTRONICS ENGINEERING', 'ELECTRICAL & ELECTRONICS ENGINEERING'],
+    MEC:   ['MEC', 'Mechanical Engineering', 'Mechanical', 'MECH', 'MECHANICAL ENGINEERING', 'MECHANICAL'],
+    CIVIL: ['CIVIL', 'Civil Engineering', 'Civil Engg', 'CIVIL ENGINEERING', 'CIVIL ENGG'],
+    IT:    ['IT', 'Information Technology', 'Information Tech', 'INFORMATION TECHNOLOGY', 'INFORMATION TECH'],
+  };
+  const canon = normalizeBranch(abbr);
+  return ALIASES[canon] || [abbr];
+}
+
 function jsonToCSV(items, selectedFields = null) {
   if (!items || items.length === 0) return '';
 
@@ -193,15 +213,16 @@ router.get('/analytics', async (req, res) => {
 
     if (isMongo) {
       let filter = {};
-      if (branch && branch !== 'ALL') filter.branch = branch;
+      if (branch && branch !== 'ALL') filter.branch = { $in: getBranchVariants(branch) };
       if (section && section !== 'ALL') filter.section = section;
       if (year && year !== 'ALL') filter.year = String(year);
       if (semester && semester !== 'ALL') filter.semester = semester;
       if (admissionType && admissionType !== 'ALL') filter.admissionType = admissionType;
       students = await Student.find(filter).lean();
     } else {
+      const canonBranch = branch && branch !== 'ALL' ? normalizeBranch(branch) : null;
       students = getMemoryStudents().filter(s => {
-        const matchesBranch = !branch || branch === 'ALL' || s.branch === branch;
+        const matchesBranch = !canonBranch || normalizeBranch(s.branch) === canonBranch;
         const matchesSection = !section || section === 'ALL' || s.section === section;
         const matchesYear = !year || year === 'ALL' || String(s.year) === String(year);
         const matchesSem = !semester || semester === 'ALL' || s.semester === semester;
@@ -420,7 +441,7 @@ router.get('/search', async (req, res) => {
 
     if (isMongo) {
       let filter = {};
-      if (branch && branch !== 'ALL') filter.branch = branch;
+      if (branch && branch !== 'ALL') filter.branch = { $in: getBranchVariants(branch) };
       if (section && section !== 'ALL') filter.section = section;
       if (year && year !== 'ALL') filter.year = String(year);
       if (semester && semester !== 'ALL') filter.semester = semester;
@@ -433,8 +454,9 @@ router.get('/search', async (req, res) => {
 
       students = await Student.find(filter).sort({ rollNumber: 1 }).lean();
     } else {
+      const canonBranch = branch && branch !== 'ALL' ? normalizeBranch(branch) : null;
       students = getMemoryStudents().filter(s => {
-        const matchesBranch = !branch || branch === 'ALL' || s.branch === branch;
+        const matchesBranch = !canonBranch || normalizeBranch(s.branch) === canonBranch;
         const matchesSection = !section || section === 'ALL' || s.section === section;
         const matchesYear = !year || year === 'ALL' || String(s.year) === String(year);
         const matchesSem = !semester || semester === 'ALL' || s.semester === semester;

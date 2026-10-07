@@ -47,15 +47,18 @@ export default function StudentDetailPage({ student: s, onBack, onEdit, onDelete
               alt={student.name}
               className="detail-photo"
               referrerPolicy="no-referrer"
+              style={{ width: 100, height: 100, borderRadius: 18, objectFit: 'cover', border: '2px solid #cbd5e1', background: '#fff' }}
               onError={e => handleImageError(e, student.name)}
             />
           ) : (
             <div style={{
-              width: 100, height: 100, borderRadius: 16,
-              background: 'linear-gradient(135deg, var(--indigo), var(--purple))',
+              width: 100, height: 100, borderRadius: 18,
+              background: '#ffffff',
+              border: '2px solid #cbd5e1',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 36, color: '#fff', fontWeight: 800
-            }}>{initials}</div>
+              fontSize: 38, color: '#0f172a', fontWeight: 800
+            }}>{student.name?.charAt(0) || initials || 'S'}</div>
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>

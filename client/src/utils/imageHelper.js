@@ -10,7 +10,9 @@ export function normalizePhotoUrl(rawUrl) {
   if (!url) return '';
 
   // Already a base64 data URL or blob URL
-  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  if (url.startsWith('data:') || url.startsWith('blob:')) {
+    return url.replace(/\s+/g, '');
+  }
 
   // Google Drive links:
   // e.g. https://drive.google.com/file/d/FILE_ID/view?usp=sharing
@@ -71,13 +73,13 @@ export function getGoogleDriveAlternateUrl(url) {
 /**
  * Handles image load errors gracefully.
  * 1. If it's a Google Drive thumbnail that failed, tries the alternate lh3 Google CDN link.
- * 2. If all fails, uses a clean fallback avatar with student name.
+ * 2. If all fails, uses a clean white fallback avatar with student initial and subtle border.
  */
 export function handleImageError(e, studentName = 'Student') {
   const currentSrc = e.currentTarget.getAttribute('src') || '';
   const altSrc = getGoogleDriveAlternateUrl(currentSrc);
 
-  // If already tried alt or no alt, fallback to UI avatars
+  // If already tried alt or no alt, fallback to clean offline white avatar
   if (altSrc && !e.currentTarget.dataset.triedAlt) {
     e.currentTarget.dataset.triedAlt = 'true';
     e.currentTarget.src = altSrc;
@@ -85,5 +87,7 @@ export function handleImageError(e, studentName = 'Student') {
   }
 
   e.currentTarget.onerror = null;
-  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName || 'Student')}&background=6366f1&color=fff&size=160`;
+  const initial = (studentName || 'S').trim().charAt(0).toUpperCase() || 'S';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%23ffffff" stroke="%23cbd5e1" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="800" fill="%230f172a">${initial}</text></svg>`;
+  e.currentTarget.src = `data:image/svg+xml;utf8,${svg}`;
 }

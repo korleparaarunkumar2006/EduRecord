@@ -41,6 +41,10 @@ const facultySchema = new mongoose.Schema({
     enum: ['admin', 'faculty'],
     default: 'faculty'
   },
+  photoUrl: {
+    type: String,
+    default: ''
+  },
   hasChangedPassword: {
     type: Boolean,
     default: false

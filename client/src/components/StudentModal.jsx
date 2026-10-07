@@ -8,8 +8,8 @@ import { createStudent, updateStudent } from '../api';
 import { normalizePhotoUrl, handleImageError } from '../utils/imageHelper';
 import toast from 'react-hot-toast';
 
-const BRANCHES = ['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'];
-const SEMESTERS = ['I Semester','II Semester','III Semester','IV Semester','V Semester','VI Semester','VII Semester','VIII Semester'];
+const BRANCHES = ['CSE', 'CST', 'AIML', 'CAI', 'DS', 'ECE', 'ECT', 'EEE', 'MEC', 'CIVIL', 'IT'];
+const SEMESTERS = ['I Semester', 'II Semester', 'III Semester', 'IV Semester', 'V Semester', 'VI Semester', 'VII Semester', 'VIII Semester'];
 const COURSES = ['B.Tech', 'M.Tech', 'MBA', 'MCA', 'Diploma'];
 const ENTRANCE_TYPES = ['EAPCET', 'ECET', 'ICET', 'PGECET', 'JEE Main', 'SPOT', 'MANAGEMENT'];
 const SEAT_CATEGORIES = ['CONVENOR', 'MANAGEMENT', 'SPOT', 'NRI'];
@@ -110,12 +110,11 @@ function buildInitial(student) {
 
 export default function StudentModal({ student, onClose, onSaved }) {
   const isExistingStudent = !!student;
-  // Requirement: If opening existing student, default to Read-Only mode until Edit button is clicked!
   const [isEditing, setIsEditing] = useState(!isExistingStudent);
 
   const [form, setForm] = useState(buildInitial(student));
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState('personal'); // personal | academic | qualifications | contact | parents
+  const [tab, setTab] = useState('personal');
   const [photoMode, setPhotoMode] = useState(
     student && student.photoUrl && student.photoUrl.startsWith('data:') ? 'upload' : 'url'
   );
@@ -136,7 +135,6 @@ export default function StudentModal({ student, onClose, onSaved }) {
       const updated = [...p.educationDetails];
       const target = { ...updated[index], [field]: val };
 
-      // Auto calculate percentage & grade points if obtained & max marks provided
       if (field === 'obtainedMarks' || field === 'maxMarks') {
         const obtained = parseFloat(field === 'obtainedMarks' ? val : target.obtainedMarks) || 0;
         const max = parseFloat(field === 'maxMarks' ? val : target.maxMarks) || 0;
@@ -203,7 +201,6 @@ export default function StudentModal({ student, onClose, onSaved }) {
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box modal-xl" onClick={e => e.stopPropagation()}>
-        {/* Header */}
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="modal-title">
@@ -213,9 +210,6 @@ export default function StudentModal({ student, onClose, onSaved }) {
                 : 'Add New Student Record'
               }
             </span>
-            {isExistingStudent && !isEditing && (
-              <span className="badge badge-sky" style={{ fontSize: 11 }}>Read-Only View</span>
-            )}
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {isExistingStudent && !isEditing && (
@@ -231,7 +225,6 @@ export default function StudentModal({ student, onClose, onSaved }) {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: 4, padding: '0 26px', borderBottom: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.1)' }}>
           {tabs.map(t => (
             <button
@@ -253,10 +246,8 @@ export default function StudentModal({ student, onClose, onSaved }) {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <div className="modal-body">
-            {/* READ-ONLY VIEW MODE */}
             {!isEditing ? (
               <div>
-                {/* Hero Header */}
                 <div style={{
                   display: 'flex', gap: 20, alignItems: 'center', padding: '16px 20px',
                   background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)',
@@ -267,12 +258,12 @@ export default function StudentModal({ student, onClose, onSaved }) {
                       src={normalizePhotoUrl(form.photoUrl)}
                       alt={form.name}
                       referrerPolicy="no-referrer"
-                      style={{ width: 80, height: 80, borderRadius: 14, objectFit: 'cover', border: '2px solid var(--indigo)' }}
+                      style={{ width: 80, height: 80, borderRadius: 16, objectFit: 'cover', border: '2px solid #cbd5e1', background: '#fff' }}
                       onError={(e) => handleImageError(e, form.name)}
                     />
                   ) : (
-                    <div style={{ width: 80, height: 80, borderRadius: 14, background: 'linear-gradient(135deg, var(--indigo), var(--purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: '#fff' }}>
-                      {form.name?.charAt(0)}
+                    <div style={{ width: 80, height: 80, borderRadius: 16, background: '#ffffff', border: '2px solid #cbd5e1', boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: '#0f172a' }}>
+                      {form.name?.charAt(0) || 'S'}
                     </div>
                   )}
                   <div style={{ flex: 1 }}>
@@ -294,7 +285,6 @@ export default function StudentModal({ student, onClose, onSaved }) {
                   </div>
                 </div>
 
-                {/* Tab content in view mode */}
                 {tab === 'personal' && (
                   <div className="detail-card">
                     <div className="detail-card-header"><FaIdCard /> Personal Information</div>
@@ -403,7 +393,6 @@ export default function StudentModal({ student, onClose, onSaved }) {
                 )}
               </div>
             ) : (
-              /* EDITABLE FORM MODE */
               <div>
                 {tab === 'personal' && (
                   <>
@@ -508,9 +497,6 @@ export default function StudentModal({ student, onClose, onSaved }) {
                                 </button>
                               )}
                             </div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                              💡 Cloud links from Google Drive, Dropbox, or GitHub are automatically converted to direct images.
-                            </div>
                           </div>
                         )}
                       </div>
@@ -541,7 +527,7 @@ export default function StudentModal({ student, onClose, onSaved }) {
                       <div className="form-group">
                         <label className="form-label">Section</label>
                         <select className="form-select" value={form.section} onChange={e => set('section', e.target.value)}>
-                          {['A','B','C','D','E'].map(s => <option key={s} value={s}>Section {s}</option>)}
+                          {['A', 'B', 'C', 'D', 'E'].map(s => <option key={s} value={s}>Section {s}</option>)}
                         </select>
                       </div>
                       <div className="form-group">
@@ -629,10 +615,9 @@ export default function StudentModal({ student, onClose, onSaved }) {
                   </>
                 )}
 
-                {/* EDUCATIONAL QUALIFICATIONS TAB (10th & INTERMEDIATE DETAILS) */}
                 {tab === 'qualifications' && (
                   <>
-                    <div className="section-title">🎓 Educational Qualifications (10th & Intermediate / Diploma)</div>
+                    <div className="section-title">🎓 Educational Qualifications (10th & Intermediate Diploma)</div>
                     {form.educationDetails.map((q, idx) => (
                       <div key={idx} style={{
                         background: 'var(--bg-input)', border: '1px solid var(--border-color)',
@@ -774,32 +759,11 @@ export default function StudentModal({ student, onClose, onSaved }) {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="modal-footer">
-            <button type="button" className="btn btn-outline" onClick={onClose}>
-              Close
-            </button>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {tabs.map(t => t.id !== tab && (
-                <button key={t.id} type="button" className="btn btn-ghost btn-sm" onClick={() => setTab(t.id)}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
 
-            {isEditing ? (
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : <><FaFloppyDisk /> {isExistingStudent ? 'Update Student Record' : 'Save Student'}</>}
-              </button>
-            ) : (
-              <button type="button" className="btn btn-outline-indigo" onClick={() => setIsEditing(true)}>
-                <FaPenToSquare /> Edit Details
-              </button>
-            )}
-          </div>
+
         </form>
-      </div>
-    </div>,
+      </div >
+    </div >,
     document.body
   );
 }

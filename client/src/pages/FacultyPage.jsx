@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   FaChalkboardUser, FaMagnifyingGlass, FaXmark, FaUserPlus,
-  FaPenToSquare, FaTrash, FaGrip, FaList, FaFilterCircleXmark, FaEye
+  FaPenToSquare, FaTrash, FaGrip, FaList, FaFilterCircleXmark, FaEye, FaDownload
 } from 'react-icons/fa6';
 import { getAllFaculty, deleteFaculty } from '../api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import FacultyModal from '../components/FacultyModal';
 import FacultyDetailPage from '../components/FacultyDetailPage';
+import FacultyExportModal from '../components/FacultyExportModal';
+import { normalizePhotoUrl, handleImageError } from '../utils/imageHelper';
 
 export default function FacultyPage() {
   const { faculty: me } = useAuth();
@@ -18,6 +20,8 @@ export default function FacultyPage() {
   const [filters, setFilters] = useState({ department: 'ALL', designation: 'ALL' });
   const [modal, setModal] = useState({ open: false, faculty: null });
   const [selectedFaculty, setSelectedFaculty] = useState(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [selectedFacultyIds, setSelectedFacultyIds] = useState(new Set());
   const searchTimer = useRef(null);
 
   const fetchFaculty = useCallback(async () => {
@@ -43,6 +47,15 @@ export default function FacultyPage() {
     searchTimer.current = setTimeout(fetchFaculty, 300);
   }, [fetchFaculty]);
 
+  const toggleSelectFaculty = (id) => {
+    setSelectedFacultyIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleDelete = async (f) => {
     if (f.facultyId === me?.facultyId) { toast.error("You can't delete your own account!"); return; }
     if (!window.confirm(`Delete faculty "${f.name}" (${f.facultyId})?`)) return;
@@ -62,12 +75,25 @@ export default function FacultyPage() {
   // If a faculty member is selected for full detail page view:
   if (selectedFaculty) {
     return (
-      <FacultyDetailPage
-        faculty={selectedFaculty}
-        onBack={() => setSelectedFaculty(null)}
-        onEdit={(f) => setModal({ open: true, faculty: f })}
-        onDelete={(f) => handleDelete(f)}
-      />
+      <>
+        <FacultyDetailPage
+          faculty={selectedFaculty}
+          onBack={() => setSelectedFaculty(null)}
+          onEdit={(f) => setModal({ open: true, faculty: f })}
+          onDelete={(f) => handleDelete(f)}
+        />
+        {modal.open && (
+          <FacultyModal
+            faculty={modal.faculty}
+            onClose={() => setModal({ open: false, faculty: null })}
+            onSaved={(updated) => {
+              setModal({ open: false, faculty: null });
+              if (updated) setSelectedFaculty(updated);
+              fetchFaculty();
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -79,6 +105,9 @@ export default function FacultyPage() {
           <p className="page-subtitle">{loading ? 'Loading...' : `${facultyList.length} faculty member${facultyList.length !== 1 ? 's' : ''}`} · Admin Only</p>
         </div>
         <div className="page-actions">
+          <button className="btn btn-outline" onClick={() => setExportModalOpen(true)}>
+            <FaDownload /> Export Faculty{selectedFacultyIds.size > 0 ? ` (${selectedFacultyIds.size} Selected)` : ''}
+          </button>
           <button className="btn btn-emerald" onClick={() => setModal({ open: true, faculty: null })}>
             <FaUserPlus /> Add Faculty
           </button>
@@ -138,6 +167,17 @@ export default function FacultyPage() {
           <table className="data-table">
             <thead>
               <tr>
+                <th style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    title="Select all"
+                    checked={facultyList.length > 0 && selectedFacultyIds.size === facultyList.length}
+                    onChange={e => {
+                      if (e.target.checked) setSelectedFacultyIds(new Set(facultyList.map(f => f.facultyId || f._id)));
+                      else setSelectedFacultyIds(new Set());
+                    }}
+                  />
+                </th>
                 <th>Faculty ID</th>
                 <th>Name</th>
                 <th>Email</th>
@@ -150,52 +190,115 @@ export default function FacultyPage() {
               </tr>
             </thead>
             <tbody>
-              {facultyList.map(f => (
-                <tr
-                  key={f._id || f.facultyId}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => setSelectedFaculty(f)}
-                >
-                  <td><span style={{ fontWeight: 700, color: 'var(--indigo-light)', fontSize: 12 }}>{f.facultyId}</span></td>
-                  <td style={{ fontWeight: 600 }}>{f.name}</td>
-                  <td style={{ fontSize: 12 }}>{f.email || '—'}</td>
-                  <td style={{ fontSize: 12 }}>{f.phoneNumber || '—'}</td>
-                  <td style={{ fontSize: 12 }}>{f.department}</td>
-                  <td style={{ fontSize: 12 }}>{f.designation}</td>
-                  <td><span className={`badge ${f.role === 'admin' ? 'badge-admin' : 'badge-faculty'}`}>{f.role}</span></td>
-                  <td>
-                    <span className={`badge ${f.hasChangedPassword ? 'badge-emerald' : 'badge-amber'}`}>
-                      {f.hasChangedPassword ? 'Yes' : 'No'}
-                    </span>
-                  </td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="btn btn-ghost btn-sm" title="View Full Page Details" onClick={() => setSelectedFaculty(f)}><FaEye /></button>
-                      <button className="btn btn-ghost btn-sm" title="Edit Account" onClick={() => setModal({ open: true, faculty: f })}><FaPenToSquare /></button>
-                      <button className="btn btn-outline-rose btn-sm" title="Delete Account" onClick={() => handleDelete(f)} disabled={f.facultyId === me?.facultyId}><FaTrash /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {facultyList.map(f => {
+                const fid = f.facultyId || f._id;
+                return (
+                  <tr
+                    key={fid}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSelectedFaculty(f)}
+                  >
+                    <td onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedFacultyIds.has(fid)}
+                        onChange={() => toggleSelectFaculty(fid)}
+                      />
+                    </td>
+                    <td><span style={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>{f.facultyId}</span></td>
+                    <td style={{ fontWeight: 600 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {f.photoUrl ? (
+                          <img
+                            src={normalizePhotoUrl(f.photoUrl)}
+                            alt={f.name}
+                            referrerPolicy="no-referrer"
+                            style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', border: '1px solid #cbd5e1', flexShrink: 0, background: '#fff' }}
+                            onError={(e) => handleImageError(e, f.name)}
+                          />
+                        ) : (
+                          <div style={{
+                            width: 30, height: 30, borderRadius: 8,
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: 700, color: '#0f172a', fontSize: 12, flexShrink: 0
+                          }}>
+                            {f.name?.charAt(0)}
+                          </div>
+                        )}
+                        <span>{f.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ fontSize: 12 }}>{f.email || '—'}</td>
+                    <td style={{ fontSize: 12 }}>{f.phoneNumber || '—'}</td>
+                    <td style={{ fontSize: 12 }}>{f.department}</td>
+                    <td style={{ fontSize: 12 }}>{f.designation}</td>
+                    <td><span className={`badge ${f.role === 'admin' ? 'badge-admin' : 'badge-faculty'}`}>{f.role}</span></td>
+                    <td>
+                      <span className={`badge ${f.hasChangedPassword ? 'badge-emerald' : 'badge-amber'}`}>
+                        {f.hasChangedPassword ? 'Yes' : 'No'}
+                      </span>
+                    </td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn-icon" title="View Details" onClick={() => setSelectedFaculty(f)}><FaEye /></button>
+                        <button className="btn-icon" title="Edit" onClick={() => setModal({ open: true, faculty: f })}><FaPenToSquare /></button>
+                        <button className="btn-icon text-rose" title="Delete" onClick={() => handleDelete(f)} disabled={f.facultyId === me?.facultyId}><FaTrash /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       ) : (
         <div className="faculty-cards-grid">
-          {facultyList.map(f => (
-            <div className="faculty-card" key={f._id || f.facultyId} onClick={() => setSelectedFaculty(f)} style={{ cursor: 'pointer' }}>
-              <div className="faculty-card-avatar">🎓</div>
-              <div className="faculty-card-name">{f.name}</div>
-              <div className="faculty-card-id">{f.facultyId}</div>
-              <span className={`badge ${f.role === 'admin' ? 'badge-admin' : 'badge-faculty'}`} style={{ marginBottom: 6 }}>{f.role}</span>
-              <div className="faculty-card-dept">{f.department}<br /><span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{f.designation}</span></div>
-              <div className="faculty-card-actions" onClick={e => e.stopPropagation()}>
-                <button className="btn btn-outline-indigo btn-sm" onClick={() => setSelectedFaculty(f)}><FaEye /> View</button>
-                <button className="btn btn-outline-indigo btn-sm" onClick={() => setModal({ open: true, faculty: f })}><FaPenToSquare /> Edit</button>
-                <button className="btn btn-outline-rose btn-sm" onClick={() => handleDelete(f)} disabled={f.facultyId === me?.facultyId}><FaTrash /></button>
+          {facultyList.map(f => {
+            const fid = f.facultyId || f._id;
+            const isSelected = selectedFacultyIds.has(fid);
+            return (
+              <div
+                className={`faculty-card ${isSelected ? 'selected-card' : ''}`}
+                key={fid}
+                onClick={() => setSelectedFaculty(f)}
+                style={{ cursor: 'pointer', position: 'relative' }}
+              >
+                <div style={{ position: 'absolute', top: 14, left: 14 }} onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelectFaculty(fid)}
+                    title={isSelected ? "Deselect" : "Select for export"}
+                    style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#0f172a' }}
+                  />
+                </div>
+                {f.photoUrl ? (
+                  <img
+                    src={normalizePhotoUrl(f.photoUrl)}
+                    alt={f.name}
+                    referrerPolicy="no-referrer"
+                    style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover', border: '2px solid #cbd5e1', margin: '0 auto 12px auto', display: 'block', background: '#fff' }}
+                    onError={(e) => handleImageError(e, f.name)}
+                  />
+                ) : (
+                  <div className="faculty-card-avatar" style={{ background: '#ffffff', border: '1px solid #cbd5e1', color: '#0f172a' }}>
+                    {f.name?.charAt(0) || '👨‍🏫'}
+                  </div>
+                )}
+                <div className="faculty-card-name">{f.name}</div>
+                <div className="faculty-card-id">{f.facultyId}</div>
+                <span className={`badge ${f.role === 'admin' ? 'badge-admin' : 'badge-faculty'}`} style={{ marginBottom: 6 }}>{f.role}</span>
+                <div className="faculty-card-dept">{f.department}<br /><span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{f.designation}</span></div>
+                <div className="faculty-card-actions" onClick={e => e.stopPropagation()}>
+                  <button className="btn btn-outline btn-sm" onClick={() => setSelectedFaculty(f)}><FaEye /> View</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => setModal({ open: true, faculty: f })}><FaPenToSquare /> Edit</button>
+                  <button className="btn btn-outline-rose btn-sm" onClick={() => handleDelete(f)} disabled={f.facultyId === me?.facultyId}><FaTrash /></button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -203,10 +306,19 @@ export default function FacultyPage() {
         <FacultyModal
           faculty={modal.faculty}
           onClose={() => setModal({ open: false, faculty: null })}
-          onSaved={() => {
+          onSaved={(updated) => {
             setModal({ open: false, faculty: null });
+            if (selectedFaculty && updated) setSelectedFaculty(updated);
             fetchFaculty();
           }}
+        />
+      )}
+
+      {exportModalOpen && (
+        <FacultyExportModal
+          facultyList={facultyList}
+          selectedFacultyList={facultyList.filter(f => selectedFacultyIds.has(f.facultyId || f._id))}
+          onClose={() => setExportModalOpen(false)}
         />
       )}
     </div>

@@ -66,10 +66,13 @@ const ALL_FIELDS = [
   { id: 'permanentAddress', label: 'Permanent Address', category: 'Parents' },
 ];
 
-export default function ExportModal({ students, onClose }) {
+export default function ExportModal({ students = [], selectedStudents = [], onClose }) {
+  const [scope, setScope] = useState(() => (selectedStudents && selectedStudents.length > 0 ? 'selected' : 'all'));
   const [format, setFormat] = useState('xlsx'); // 'xlsx' | 'csv'
   const [selectedFields, setSelectedFields] = useState(ALL_FIELDS.map(f => f.id));
   const [isExporting, setIsExporting] = useState(false);
+
+  const targetStudents = scope === 'selected' && selectedStudents.length > 0 ? selectedStudents : students;
 
   useEffect(() => {
     document.body.classList.add('modal-open');
@@ -115,7 +118,7 @@ export default function ExportModal({ students, onClose }) {
   };
 
   const handleExport = () => {
-    if (!students || students.length === 0) {
+    if (!targetStudents || targetStudents.length === 0) {
       toast.error('No student records available to export.');
       return;
     }
@@ -128,9 +131,10 @@ export default function ExportModal({ students, onClose }) {
 
     try {
       const activeFieldDefs = ALL_FIELDS.filter(f => selectedFields.includes(f.id));
-      const fileName = `Student_Records_Export_${new Date().toISOString().slice(0, 10)}.${format}`;
+      const scopePrefix = scope === 'selected' ? 'Selected_' : '';
+      const fileName = `Student_Records_${scopePrefix}Export_${new Date().toISOString().slice(0, 10)}.${format}`;
 
-      const rows = students.map(s => {
+      const rows = targetStudents.map(s => {
         const row = {};
         activeFieldDefs.forEach(def => {
           row[def.label] = getFieldValue(s, def.id);
@@ -148,7 +152,7 @@ export default function ExportModal({ students, onClose }) {
         XLSX.writeFile(workbook, fileName, { bookType: 'xlsx' });
       }
 
-      toast.success(`🎉 Exported ${students.length} student record(s) to ${fileName}!`);
+      toast.success(`🎉 Exported ${targetStudents.length} ${scope === 'selected' ? 'selected ' : ''}student record(s) to ${fileName}!`);
       onClose();
     } catch (err) {
       console.error(err);
@@ -171,8 +175,31 @@ export default function ExportModal({ students, onClose }) {
         </div>
 
         <div className="modal-body">
+          {/* Target Selection: All vs Selected */}
+          <div className="section-title">1. Export Target</div>
+          <div style={{ display: 'grid', gridTemplateColumns: selectedStudents.length > 0 ? 'repeat(2, 1fr)' : '1fr', gap: 10, marginBottom: 18 }}>
+            <button
+              type="button"
+              className={`btn ${scope === 'all' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setScope('all')}
+              style={{ padding: '12px', justifyContent: 'center', gap: 8, fontSize: 13 }}
+            >
+              All Filtered Students ({students.length})
+            </button>
+            {selectedStudents.length > 0 && (
+              <button
+                type="button"
+                className={`btn ${scope === 'selected' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setScope('selected')}
+                style={{ padding: '12px', justifyContent: 'center', gap: 8, fontSize: 13 }}
+              >
+                Selected Cards Only ({selectedStudents.length})
+              </button>
+            )}
+          </div>
+
           {/* Format Selection */}
-          <div className="section-title">Select File Format</div>
+          <div className="section-title">2. Select File Format</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
             <button
               type="button"
@@ -196,8 +223,8 @@ export default function ExportModal({ students, onClose }) {
 
           {/* Export Scope Info */}
           <div style={{
-            background: 'rgba(99,102,241,0.08)',
-            border: '1px solid rgba(99,102,241,0.25)',
+            background: 'var(--bg-input)',
+            border: '1px solid var(--border-color)',
             borderRadius: 'var(--radius-md)',
             padding: '12px 18px',
             marginBottom: 20,
@@ -206,12 +233,10 @@ export default function ExportModal({ students, onClose }) {
             justifyContent: 'space-between'
           }}>
             <div>
-              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--indigo-light)' }}>
-                Target Dataset: {students.length} Student Record(s)
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>
+                Target Dataset: {targetStudents.length} Student Record(s) {scope === 'selected' ? '(Selected Cards)' : '(All Filter Results)'}
               </span>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                Applies current filter, search, and branch selection criteria.
-              </div>
+
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="button" className="btn btn-outline btn-sm" onClick={selectAll}>
@@ -224,7 +249,7 @@ export default function ExportModal({ students, onClose }) {
           </div>
 
           {/* Fields Selection by Category */}
-          <div className="section-title">Select Student Attributes to Include</div>
+          <div className="section-title">3. Select Student Attributes to Include</div>
           {categories.map(cat => {
             const catFields = ALL_FIELDS.filter(f => f.category === cat);
             return (
@@ -245,13 +270,13 @@ export default function ExportModal({ students, onClose }) {
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                           padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
-                          background: checked ? 'rgba(99,102,241,0.12)' : 'var(--bg-input)',
-                          border: checked ? '1px solid rgba(99,102,241,0.4)' : '1px solid var(--border-color)',
+                          background: checked ? 'rgba(79,70,229,0.08)' : 'var(--bg-input)',
+                          border: checked ? '1px solid #4f46e5' : '1px solid var(--border-color)',
                           transition: 'all 0.15s', fontSize: 13
                         }}
                       >
                         {checked ? (
-                          <FaSquareCheck style={{ color: 'var(--indigo-light)', fontSize: 16 }} />
+                          <FaSquareCheck style={{ color: '#4f46e5', fontSize: 16 }} />
                         ) : (
                           <FaSquare style={{ color: 'var(--text-muted)', fontSize: 16 }} />
                         )}
@@ -278,10 +303,10 @@ export default function ExportModal({ students, onClose }) {
             type="button"
             className="btn btn-primary"
             onClick={handleExport}
-            disabled={isExporting || students.length === 0 || selectedFields.length === 0}
+            disabled={isExporting || targetStudents.length === 0 || selectedFields.length === 0}
             style={{ background: 'linear-gradient(135deg, var(--emerald), #059669)', border: 'none' }}
           >
-            <FaDownload /> {isExporting ? 'Generating...' : `Export to ${format.toUpperCase()}`}
+            <FaDownload /> {isExporting ? 'Generating...' : `Export ${targetStudents.length} Record(s) to ${format.toUpperCase()}`}
           </button>
         </div>
       </div>

@@ -15,10 +15,10 @@ import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 import { normalizePhotoUrl, handleImageError } from '../utils/imageHelper';
 
-const BRANCHES = ['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'];
-const SECTIONS = ['A','B','C','D','E'];
-const YEARS = ['1','2','3','4'];
-const SEMESTERS = ['I Semester','II Semester','III Semester','IV Semester','V Semester','VI Semester','VII Semester','VIII Semester'];
+const BRANCHES = ['CSE', 'CST', 'AIML', 'CAI', 'DS', 'ECE', 'ECT', 'EEE', 'MEC', 'CIVIL', 'IT'];
+const SECTIONS = ['A', 'B', 'C', 'D', 'E'];
+const YEARS = ['1', '2', '3', '4'];
+const SEMESTERS = ['I Semester', 'II Semester', 'III Semester', 'IV Semester', 'V Semester', 'VI Semester', 'VII Semester', 'VIII Semester'];
 
 export default function StudentsPage() {
   const { faculty } = useAuth();
@@ -183,13 +183,13 @@ export default function StudentsPage() {
         </div>
         <div className="page-actions">
           <button
-            className={`btn ${isSmartFiltered ? 'btn-amber' : 'btn-outline-indigo'}`}
+            className={`btn ${isSmartFiltered ? 'btn-amber' : 'btn-outline'}`}
             onClick={() => setShowSmartFilterModal(true)}
           >
             <FaSliders /> {smartFilters.preset ? smartFilters.preset : 'Smart Filters Engine'}
           </button>
           <button className="btn btn-outline" onClick={() => setExportModal(true)}>
-            <FaDownload /> Export Data
+            <FaDownload /> Export Data{selected.size > 0 ? ` (${selected.size} Selected)` : ''}
           </button>
           {isAdmin && selected.size > 0 && (
             <button className="btn btn-rose" onClick={handleBulkDelete}>
@@ -337,7 +337,17 @@ export default function StudentsPage() {
           <table className="data-table">
             <thead>
               <tr>
-                {isAdmin && <th><input type="checkbox" onChange={e => { if (e.target.checked) setSelected(new Set(students.map(s => s.rollNumber))); else setSelected(new Set()); }} /></th>}
+                <th>
+                  <input
+                    type="checkbox"
+                    title="Select all"
+                    checked={students.length > 0 && selected.size === students.length}
+                    onChange={e => {
+                      if (e.target.checked) setSelected(new Set(students.map(s => s.rollNumber)));
+                      else setSelected(new Set());
+                    }}
+                  />
+                </th>
                 <th>Roll No</th>
                 <th>Name</th>
                 <th>Branch</th>
@@ -353,9 +363,15 @@ export default function StudentsPage() {
             <tbody>
               {students.map(s => (
                 <tr key={s._id} onClick={() => setDetailStudent(s)} style={{ cursor: 'pointer' }}>
-                  {isAdmin && <td onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.has(s.rollNumber)} onChange={() => toggleSelect(s.rollNumber)} /></td>}
+                  <td onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(s.rollNumber)}
+                      onChange={() => toggleSelect(s.rollNumber)}
+                    />
+                  </td>
                   <td>
-                    <span style={{ fontWeight: 700, color: 'var(--indigo-light)', fontSize: 12 }}>{s.rollNumber}</span>
+                    <span style={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>{s.rollNumber}</span>
                   </td>
                   <td style={{ fontWeight: 600 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -364,26 +380,27 @@ export default function StudentsPage() {
                           src={normalizePhotoUrl(s.photoUrl)}
                           alt={s.name}
                           referrerPolicy="no-referrer"
-                          style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border-color)', flexShrink: 0 }}
+                          style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', border: '1px solid #cbd5e1', flexShrink: 0 }}
                           onError={(e) => handleImageError(e, s.name)}
                         />
                       ) : (
                         <div style={{
                           width: 30, height: 30, borderRadius: 8,
-                          background: 'linear-gradient(135deg, var(--indigo), var(--purple))',
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontWeight: 700, color: '#fff', fontSize: 12, flexShrink: 0
+                          fontWeight: 800, color: '#0f172a', fontSize: 13, flexShrink: 0
                         }}>
-                          {s.name?.charAt(0)}
+                          {s.name?.charAt(0) || 'S'}
                         </div>
                       )}
                       <span>{s.name}</span>
                     </div>
                   </td>
-                  <td><span className="badge badge-indigo">{s.branch}</span></td>
+                  <td><span className="badge badge-slate">{s.branch}</span></td>
                   <td>{s.section} / {s.year}Y</td>
                   <td>{s.semester}</td>
-                  <td><span style={{ color: 'var(--indigo-light)', fontWeight: 700 }}>{s.gpa?.toFixed(2)}</span></td>
+                  <td><span style={{ color: '#0f172a', fontWeight: 700 }}>{s.gpa?.toFixed(2)}</span></td>
                   <td><span style={{ color: 'var(--emerald)', fontWeight: 700 }}>{s.marksPercentage?.toFixed(1)}%</span></td>
                   <td>
                     <span className={`badge ${s.attendance >= 75 ? 'badge-emerald' : 'badge-rose'}`}>
@@ -396,7 +413,7 @@ export default function StudentsPage() {
                       <button className="btn-icon" onClick={() => setDetailStudent(s)} title="View Details"><FaEye /></button>
                       {isAdmin && (
                         <>
-                          <button className="btn-icon text-indigo" onClick={() => setAddEditModal({ open: true, student: s })} title="Edit"><FaPenToSquare /></button>
+                          <button className="btn-icon" onClick={() => setAddEditModal({ open: true, student: s })} title="Edit"><FaPenToSquare /></button>
                           <button className="btn-icon text-rose" onClick={() => handleDelete(s._id, s.name)} title="Delete"><FaTrash /></button>
                         </>
                       )}
@@ -428,6 +445,7 @@ export default function StudentsPage() {
       {exportModal && (
         <ExportModal
           students={students}
+          selectedStudents={students.filter(s => selected.has(s.rollNumber))}
           onClose={() => setExportModal(false)}
         />
       )}
@@ -451,34 +469,34 @@ function StudentCard({ student: s, isAdmin, selected, onToggleSelect, onView, on
     <div className={`card student-card ${selected ? 'selected-card' : ''}`}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          {isAdmin && (
-            <input
-              type="checkbox"
-              checked={selected}
-              onChange={onToggleSelect}
-              style={{ cursor: 'pointer', width: 16, height: 16 }}
-            />
-          )}
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            title={selected ? "Deselect student" : "Select student for export"}
+            style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#0f172a' }}
+          />
           {s.photoUrl ? (
             <img
               src={normalizePhotoUrl(s.photoUrl)}
               alt={s.name}
               referrerPolicy="no-referrer"
-              style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover', border: '2px solid var(--indigo)' }}
+              style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover', border: '2px solid #cbd5e1' }}
               onError={(e) => handleImageError(e, s.name)}
             />
           ) : (
             <div style={{
               width: 44, height: 44, borderRadius: 12,
-              background: 'linear-gradient(135deg, var(--indigo), var(--purple))',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, color: '#fff', fontSize: 16
+              fontWeight: 800, color: '#0f172a', fontSize: 16, flexShrink: 0
             }}>
-              {s.name?.charAt(0)}
+              {s.name?.charAt(0) || 'S'}
             </div>
           )}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--indigo-light)' }}>{s.rollNumber}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#475569' }}>{s.rollNumber}</div>
             <div style={{ fontWeight: 700, fontSize: 14 }}>{s.name}</div>
           </div>
         </div>
@@ -488,8 +506,8 @@ function StudentCard({ student: s, isAdmin, selected, onToggleSelect, onView, on
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-        <span className="badge badge-indigo">{s.branch}</span>
-        <span className="badge badge-sky">Sec {s.section}</span>
+        <span className="badge badge-slate">{s.branch}</span>
+        <span className="badge badge-neutral">Sec {s.section}</span>
         <span className="badge badge-purple">{s.year} Year</span>
         <span className="badge badge-amber">{s.admissionType || 'Regular'}</span>
       </div>
@@ -497,7 +515,7 @@ function StudentCard({ student: s, isAdmin, selected, onToggleSelect, onView, on
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, textAlign: 'center', marginBottom: 14 }}>
         <div>
           <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>CGPA</div>
-          <div style={{ fontWeight: 800, color: 'var(--indigo-light)', fontSize: 14 }}>{s.gpa?.toFixed(2)}</div>
+          <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 14 }}>{s.gpa?.toFixed(2)}</div>
         </div>
         <div>
           <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>MARKS</div>
@@ -517,7 +535,7 @@ function StudentCard({ student: s, isAdmin, selected, onToggleSelect, onView, on
         </button>
         {isAdmin && (
           <>
-            <button className="btn btn-outline-indigo btn-sm" onClick={onEdit} title="Edit Student">
+            <button className="btn btn-outline btn-sm" onClick={onEdit} title="Edit Student">
               <FaPenToSquare />
             </button>
             <button className="btn btn-outline-rose btn-sm" onClick={onDelete} title="Delete Student">

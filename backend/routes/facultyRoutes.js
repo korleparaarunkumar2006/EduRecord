@@ -121,7 +121,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 // @desc    Add a new faculty member (Admin only)
 router.post('/', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { facultyId, name, email, phoneNumber, password, department, designation, role } = req.body;
+    const { facultyId, name, email, phoneNumber, password, department, designation, role, photoUrl } = req.body;
 
     if (!facultyId || !name || !password) {
       return res.status(400).json({ success: false, message: 'Faculty ID, Name, and Password are required.' });
@@ -148,6 +148,7 @@ router.post('/', verifyToken, requireAdmin, async (req, res) => {
         department: (department || 'Computer Science & Engineering').trim(),
         designation: (designation || 'Associate Professor').trim(),
         role: role === 'admin' ? 'admin' : 'faculty',
+        photoUrl: (photoUrl || '').trim(),
         hasChangedPassword: req.body.hasChangedPassword !== undefined ? !!req.body.hasChangedPassword : false
       });
 
@@ -179,6 +180,7 @@ router.post('/', verifyToken, requireAdmin, async (req, res) => {
         department: (department || 'Computer Science & Engineering').trim(),
         designation: (designation || 'Associate Professor').trim(),
         role: role === 'admin' ? 'admin' : 'faculty',
+        photoUrl: (photoUrl || '').trim(),
         hasChangedPassword: req.body.hasChangedPassword !== undefined ? !!req.body.hasChangedPassword : false,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -207,7 +209,7 @@ router.put('/profile/update', verifyToken, async (req, res) => {
     const isMongo = getDBState();
     const userId = req.faculty.id;
     const userRole = req.faculty.role;
-    const { name, email, phoneNumber, department, designation, password } = req.body;
+    const { name, email, phoneNumber, department, designation, password, photoUrl } = req.body;
 
     if (isMongo) {
       let facultyUser = null;
@@ -222,10 +224,11 @@ router.put('/profile/update', verifyToken, async (req, res) => {
         return res.status(404).json({ success: false, message: 'Profile record not found.' });
       }
 
-      // Faculty can ONLY update personal details: name, email, phoneNumber
+      // Faculty can ONLY update personal details: name, email, phoneNumber, photoUrl
       if (name) facultyUser.name = name.trim();
       if (email !== undefined) facultyUser.email = email.trim();
       if (phoneNumber !== undefined) facultyUser.phoneNumber = phoneNumber.trim();
+      if (photoUrl !== undefined) facultyUser.photoUrl = photoUrl.trim();
 
       // Only Admin can change department/designation via profile
       if (userRole === 'admin') {
@@ -261,10 +264,17 @@ router.put('/profile/update', verifyToken, async (req, res) => {
         department: facultyUser.department,
         designation: facultyUser.designation,
         role: facultyUser.role,
+        photoUrl: facultyUser.photoUrl || '',
         hasChangedPassword: !!facultyUser.hasChangedPassword
       };
 
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
+      const tokenPayload = {
+        id: facultyUser._id,
+        facultyId: facultyUser.facultyId,
+        name: facultyUser.name,
+        role: facultyUser.role
+      };
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '8h' });
 
       return res.json({
         success: true,
@@ -284,6 +294,7 @@ router.put('/profile/update', verifyToken, async (req, res) => {
       if (name) facultyUser.name = name.trim();
       if (email !== undefined) facultyUser.email = email.trim();
       if (phoneNumber !== undefined) facultyUser.phoneNumber = phoneNumber.trim();
+      if (photoUrl !== undefined) facultyUser.photoUrl = photoUrl.trim();
 
       if (userRole === 'admin') {
         if (department) facultyUser.department = department.trim();
@@ -318,10 +329,17 @@ router.put('/profile/update', verifyToken, async (req, res) => {
         department: facultyUser.department,
         designation: facultyUser.designation,
         role: facultyUser.role,
+        photoUrl: facultyUser.photoUrl || '',
         hasChangedPassword: !!facultyUser.hasChangedPassword
       };
 
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
+      const tokenPayload = {
+        id: facultyUser._id,
+        facultyId: facultyUser.facultyId,
+        name: facultyUser.name,
+        role: facultyUser.role
+      };
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '8h' });
 
       return res.json({
         success: true,
@@ -342,7 +360,7 @@ router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     const isMongo = getDBState();
     const idParam = req.params.id;
-    const { facultyId, name, email, phoneNumber, password, department, designation, role, hasChangedPassword } = req.body;
+    const { facultyId, name, email, phoneNumber, password, department, designation, role, hasChangedPassword, photoUrl } = req.body;
 
     if (isMongo) {
       let facultyUser = null;
@@ -372,6 +390,7 @@ router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
       if (department) facultyUser.department = department.trim();
       if (designation) facultyUser.designation = designation.trim();
       if (role && (role === 'admin' || role === 'faculty')) facultyUser.role = role;
+      if (photoUrl !== undefined) facultyUser.photoUrl = photoUrl.trim();
       if (hasChangedPassword !== undefined) facultyUser.hasChangedPassword = !!hasChangedPassword;
 
       if (password && password.trim() !== '') {
@@ -412,6 +431,7 @@ router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
       if (department) facultyUser.department = department.trim();
       if (designation) facultyUser.designation = designation.trim();
       if (role && (role === 'admin' || role === 'faculty')) facultyUser.role = role;
+      if (photoUrl !== undefined) facultyUser.photoUrl = photoUrl;
       if (hasChangedPassword !== undefined) facultyUser.hasChangedPassword = !!hasChangedPassword;
 
       if (password && password.trim() !== '') {

@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FaGraduationCap, FaBars, FaXmark, FaRightFromBracket,
-  FaHouse, FaUsers, FaChalkboardUser, FaUserGear, FaSun, FaMoon
+  FaHouse, FaUsers, FaChalkboardUser, FaUserGear
 } from 'react-icons/fa6';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import ProfileModal from './ProfileModal';
+import { normalizePhotoUrl, handleImageError } from '../utils/imageHelper';
 
 export default function Navbar() {
   const { faculty, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -63,26 +62,22 @@ export default function Navbar() {
 
         {/* Right Side */}
         <div className="nav-right">
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            className="theme-toggle-btn"
-            onClick={toggleTheme}
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-          >
-            {theme === 'dark' ? (
-              <FaSun className="theme-icon sun" />
-            ) : (
-              <FaMoon className="theme-icon moon" />
-            )}
-            <span className="theme-text">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
 
           {/* Faculty Pill */}
           <div className="faculty-pill" onClick={() => setProfileOpen(true)}>
-            <div className="faculty-pill-avatar">
-              <FaUserGear />
-            </div>
+            {faculty?.photoUrl ? (
+              <img
+                src={normalizePhotoUrl(faculty.photoUrl)}
+                alt={faculty.name}
+                referrerPolicy="no-referrer"
+                style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: '1px solid #cbd5e1', flexShrink: 0 }}
+                onError={(e) => handleImageError(e, faculty.name)}
+              />
+            ) : (
+              <div className="faculty-pill-avatar" style={{ background: '#ffffff', border: '1px solid #cbd5e1', color: '#0f172a' }}>
+                <FaUserGear />
+              </div>
+            )}
             <div>
               <div className="faculty-pill-name">{faculty?.name || 'Faculty'}</div>
               <div className="faculty-pill-role">{faculty?.role === 'admin' ? '● Admin' : '● Faculty'}</div>

@@ -103,7 +103,7 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
 
         <div className="modal-body">
           {/* Quick Presets Bar */}
-          <div className="section-title">⚡ Quick Smart Presets</div>
+          <div className="section-title">Quick Smart Presets</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 20 }}>
             <button
               type="button"
@@ -111,7 +111,7 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               onClick={() => applyPreset('highPerformers')}
               style={{ justifyContent: 'center', padding: '9px 10px', fontSize: 13 }}
             >
-              <FaStar /> High Performers (≥8.5)
+              High Performers (≥8.5)
             </button>
             <button
               type="button"
@@ -119,7 +119,7 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               onClick={() => applyPreset('lowAttendance')}
               style={{ justifyContent: 'center', padding: '9px 10px', fontSize: 13 }}
             >
-              <FaTriangleExclamation /> Low Attendance (&lt;75%)
+              Low Attendance (&lt;75%)
             </button>
             <button
               type="button"
@@ -127,7 +127,7 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               onClick={() => applyPreset('regularConvenor')}
               style={{ justifyContent: 'center', padding: '9px 10px', fontSize: 13 }}
             >
-              🎓 Regular Convenor
+              Regular Convenor
             </button>
             <button
               type="button"
@@ -135,7 +135,7 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               onClick={() => applyPreset('lateralEntry')}
               style={{ justifyContent: 'center', padding: '9px 10px', fontSize: 13 }}
             >
-              🚀 Lateral Entry
+              Lateral Entry
             </button>
             <button
               type="button"
@@ -143,12 +143,12 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               onClick={() => applyPreset('managementQuota')}
               style={{ justifyContent: 'center', padding: '9px 10px', fontSize: 13 }}
             >
-              🎟️ Management Quota
+              Management Quota
             </button>
           </div>
 
           {/* Academic Metric Sliders & Ranges */}
-          <div className="section-title">📊 Academic Performance Thresholds</div>
+          <div className="section-title"> Academic Performance</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 22 }}>
             {/* CGPA Range */}
             <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 14 }}>
@@ -233,13 +233,13 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
           </div>
 
           {/* Categorical Dropdowns */}
-          <div className="section-title">🏷️ Class & Admission Attributes</div>
+          <div className="section-title"> Class & Admission Attributes</div>
           <div className="form-grid-3 mb-3">
             <div className="form-group">
               <label className="form-label">Branch</label>
               <select className="form-select" value={localFilters.branch} onChange={e => set('branch', e.target.value)}>
                 <option value="ALL">All Branches</option>
-                {['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'].map(b => (
+                {['CSE', 'CST', 'AIML', 'CAI', 'DS', 'ECE', 'ECT', 'EEE', 'MEC', 'CIVIL', 'IT'].map(b => (
                   <option key={b} value={b}>{b}</option>
                 ))}
               </select>
@@ -249,7 +249,7 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
               <label className="form-label">Section</label>
               <select className="form-select" value={localFilters.section} onChange={e => set('section', e.target.value)}>
                 <option value="ALL">All Sections</option>
-                {['A','B','C','D','E'].map(s => (
+                {['A', 'B', 'C', 'D', 'E'].map(s => (
                   <option key={s} value={s}>Section {s}</option>
                 ))}
               </select>
@@ -296,7 +296,7 @@ export default function SmartFilterModal({ filters, onApply, onClose, onReset })
           </div>
 
           {/* Extended Quota & Entrance Attributes */}
-          <div className="section-title">💰 Quota & Entrance Attributes</div>
+          <div className="section-title"> Quota & Entrance Attributes</div>
           <div className="form-grid-2 mb-3">
             <div className="form-group">
               <label className="form-label">Seat Category Quota</label>

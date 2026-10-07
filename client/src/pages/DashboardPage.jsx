@@ -78,7 +78,7 @@ export default function DashboardPage() {
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div>
           <h1 className="page-title" style={{ fontSize: 26 }}>
-            Welcome back, {faculty?.name?.split(' ')[0]} 👋
+            Welcome back, {faculty?.name || 'Faculty'} 👋
           </h1>
           <p className="page-subtitle">
             {faculty?.role === 'admin' ? 'HOD / Admin' : 'Faculty Member'} ·{' '}

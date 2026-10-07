@@ -121,8 +121,23 @@ export default function BulkImportModal({ onClose, onDone }) {
     try {
       const res = await bulkImportStudents(mode, students);
       if (res.data.success !== false) {
-        setReport(res.data);
-        toast.success(`Import complete! Inserted: ${res.data.insertedCount || 0}, Updated: ${res.data.updatedCount || 0}`);
+        // Backend wraps counts inside res.data.summary
+        const summary = res.data.summary || {};
+        const flatReport = {
+          ...res.data,
+          insertedCount: summary.insertedCount ?? res.data.insertedCount ?? 0,
+          updatedCount:  summary.updatedCount  ?? res.data.updatedCount  ?? 0,
+          skippedCount:  summary.skippedCount  ?? res.data.skippedCount  ?? 0,
+          errors:        summary.errors        ?? res.data.errors        ?? [],
+          totalReceived: summary.totalReceived ?? res.data.totalReceived ?? students.length,
+        };
+        setReport(flatReport);
+        const added   = flatReport.insertedCount;
+        const updated = flatReport.updatedCount;
+        const skipped = flatReport.skippedCount;
+        toast.success(
+          `✅ Import done!  ➕ ${added} added · ♻️ ${updated} updated · ⏭️ ${skipped} skipped`
+        );
       } else {
         toast.error(res.data.message || 'Import failed.');
       }
@@ -152,7 +167,7 @@ export default function BulkImportModal({ onClose, onDone }) {
               <div className="section-title">Import Mode</div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
                 {[
-                  { value: 'NEW', label: 'Add New Only', desc: 'Skip existing records' },
+                  { value: 'ADD', label: 'Add New Only', desc: 'Skip existing records' },
                   { value: 'UPDATE', label: 'Update Only', desc: 'Only update existing' },
                   { value: 'BOTH', label: 'Smart Merge', desc: 'Add new + update existing' },
                 ].map(m => (
@@ -348,20 +363,24 @@ export default function BulkImportModal({ onClose, onDone }) {
               <div style={{ textAlign: 'center', marginBottom: 20 }}>
                 <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>Import Complete!</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {report.totalReceived || 0} row{(report.totalReceived || 0) !== 1 ? 's' : ''} processed in <strong>{report.mode || 'BOTH'}</strong> mode
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
                 {[
-                  { label: 'Inserted', value: report.insertedCount || 0, color: 'var(--emerald)', icon: '✅' },
-                  { label: 'Updated', value: report.updatedCount || 0, color: 'var(--indigo)', icon: '♻️' },
-                  { label: 'Skipped', value: report.skippedCount || 0, color: 'var(--amber)', icon: '⏭️' },
+                  { label: 'Total Rows',   value: report.totalReceived || 0, color: 'var(--text-primary)', icon: '📋' },
+                  { label: 'Added',        value: report.insertedCount || 0, color: 'var(--emerald)',      icon: '➕' },
+                  { label: 'Updated',      value: report.updatedCount  || 0, color: 'var(--indigo)',       icon: '♻️' },
+                  { label: 'Skipped',      value: report.skippedCount  || 0, color: 'var(--amber)',        icon: '⏭️' },
                 ].map(r => (
                   <div key={r.label} style={{
                     background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-md)', padding: '18px', textAlign: 'center'
+                    borderRadius: 'var(--radius-md)', padding: '14px 10px', textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: 22 }}>{r.icon}</div>
-                    <div style={{ fontSize: 30, fontWeight: 800, color: r.color }}>{r.value}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{r.label}</div>
+                    <div style={{ fontSize: 20 }}>{r.icon}</div>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: r.color, lineHeight: 1.2 }}>{r.value}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{r.label}</div>
                   </div>
                 ))}
               </div>

@@ -108,6 +108,29 @@ const connectDB = async () => {
         { upsert: true, new: true }
       );
     }
+
+    // Auto-normalize all existing student records in MongoDB (e.g. MECH -> MEC, AI -> AIML, full names -> CSE/ECE/etc.)
+    try {
+      const allDbStudents = await Student.find({}, '_id rollNumber branch name').lean();
+      let migrated = 0;
+      for (let st of allDbStudents) {
+        if (!st.branch) continue;
+        const norm = Student.normalizeBranch ? Student.normalizeBranch(st.branch) : st.branch;
+        const normName = st.name ? String(st.name).trim().toUpperCase() : st.name;
+        if (st.branch !== norm || st.name !== normName) {
+          await Student.updateOne(
+            { _id: st._id },
+            { $set: { branch: norm, name: normName } }
+          );
+          migrated++;
+        }
+      }
+      if (migrated > 0) {
+        console.log(`✅ Auto-normalized ${migrated} student record(s) to short branch codes (CSE, ECE, MEC, CST, etc.).`);
+      }
+    } catch (migErr) {
+      console.log('Branch auto-normalization note:', migErr.message);
+    }
   } catch (err) {
     isMongoConnected = false;
     console.log('⚠️ MongoDB connection issue:', err.message);

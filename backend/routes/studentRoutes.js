@@ -52,7 +52,7 @@ function normalizePhotoUrl(rawUrl) {
 
 // Normalizes any branch name variant to the canonical abbreviation used by filters
 function normalizeBranch(raw) {
-  if (!raw) return 'ECE';
+  if (!raw || String(raw).trim() === '') return '';
   const b = String(raw).trim().toUpperCase()
     .replace(/\s+/g, ' ')
     .replace(/[^A-Z0-9 &]/g, '');
@@ -61,44 +61,72 @@ function normalizeBranch(raw) {
   if (KNOWN.includes(b)) return b;
 
   const MAP = [
+    // CSE variants (most specific first)
     ['COMPUTER SCIENCE AND ENGINEERING', 'CSE'],
     ['COMPUTER SCIENCE & ENGINEERING', 'CSE'],
     ['COMPUTER SCIENCE ENGINEERING', 'CSE'],
-    ['B.TECH CSE', 'CSE'],
-    ['BTECH CSE', 'CSE'],
+    // CST variants — must come BEFORE generic 'COMPUTER SCIENCE'
     ['COMPUTER SCIENCE AND TECHNOLOGY', 'CST'],
     ['COMPUTER SCIENCE & TECHNOLOGY', 'CST'],
     ['COMPUTER SCIENCE TECHNOLOGY', 'CST'],
+    // Generic CSE after CST
+    ['COMPUTER SCIENCE', 'CSE'],
+    ['BTECH CSE', 'CSE'],
+    ['B TECH CSE', 'CSE'],
+    ['B.TECH CSE', 'CSE'],
+    // AIML variants
     ['ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING', 'AIML'],
     ['ARTIFICIAL INTELLIGENCE & MACHINE LEARNING', 'AIML'],
+    ['ARTIFICIAL INTELLIGENCE MACHINE LEARNING', 'AIML'],
     ['AI AND ML', 'AIML'],
     ['AI & ML', 'AIML'],
+    ['AIML', 'AIML'],
+    // Artificial Intelligence — after AIML
+    ['ARTIFICIAL INTELLIGENCE', 'AIML'],
+    // CAI variants
     ['COMPUTER AND ARTIFICIAL INTELLIGENCE', 'CAI'],
     ['COMPUTER & ARTIFICIAL INTELLIGENCE', 'CAI'],
     ['COMPUTER ARTIFICIAL INTELLIGENCE', 'CAI'],
+    // Data Science variants
     ['DATA SCIENCE AND ENGINEERING', 'DS'],
     ['DATA SCIENCE & ENGINEERING', 'DS'],
     ['DATA SCIENCE', 'DS'],
+    ['DATA SCI', 'DS'],
+    // ── CRITICAL ORDER: ECT must come BEFORE generic ECE ──
+    // ECT full names (more specific — all contain 'TECHNOLOGY' suffix)
+    ['ELECTRONICS AND COMMUNICATION TECHNOLOGY', 'ECT'],
+    ['ELECTRONICS & COMMUNICATION TECHNOLOGY', 'ECT'],
+    ['ELECTRONICS COMMUNICATION TECHNOLOGY', 'ECT'],
+    // ECE full names
     ['ELECTRONICS AND COMMUNICATION ENGINEERING', 'ECE'],
     ['ELECTRONICS & COMMUNICATION ENGINEERING', 'ECE'],
+    ['ELECTRONICS COMMUNICATION ENGINEERING', 'ECE'],
+    // Generic ECE — MUST come after specific ECT entries
     ['ELECTRONICS AND COMMUNICATION', 'ECE'],
     ['ELECTRONICS & COMMUNICATION', 'ECE'],
-    ['ELECTRONICS COMMUNICATION ENGINEERING', 'ECE'],
-    ['ELECTRONICS AND COMPUTER TECHNOLOGY', 'ECT'],
-    ['ELECTRONICS & COMPUTER TECHNOLOGY', 'ECT'],
-    ['ELECTRONICS COMPUTER TECHNOLOGY', 'ECT'],
-    ['ELECTRONICS AND COMMUNICATION TECHNOLOGY', 'ECT'],
+    // EEE variants
     ['ELECTRICAL AND ELECTRONICS ENGINEERING', 'EEE'],
     ['ELECTRICAL & ELECTRONICS ENGINEERING', 'EEE'],
     ['ELECTRICAL ELECTRONICS ENGINEERING', 'EEE'],
     ['ELECTRICAL AND ELECTRONICS', 'EEE'],
+    ['ELECTRICAL & ELECTRONICS', 'EEE'],
+    // Mechanical
     ['MECHANICAL ENGINEERING', 'MEC'],
-    ['MECHANICAL', 'MEC'],
     ['MECH', 'MEC'],
+    ['MECHANICAL', 'MEC'],
+    // Civil
     ['CIVIL ENGINEERING', 'CIVIL'],
     ['CIVIL ENGG', 'CIVIL'],
+    ['CIVIL', 'CIVIL'],
+    // IT
     ['INFORMATION TECHNOLOGY', 'IT'],
     ['INFORMATION TECH', 'IT'],
+    ['INFO TECH', 'IT'],
+    // Short aliases — last resort
+    ['AI', 'AIML'],
+    ['CSD', 'DS'],
+    ['DS', 'DS'],
+    ['IT', 'IT'],
   ];
 
   for (const [pattern, abbr] of MAP) {
@@ -109,7 +137,8 @@ function normalizeBranch(raw) {
   const stripped = b.replace(/\s+/g, '');
   if (KNOWN.includes(stripped)) return stripped;
 
-  return stripped.slice(0, 10) || 'ECE';
+  // Return cleaned value as-is — do NOT default to ECE
+  return stripped.slice(0, 10) || b.slice(0, 10);
 }
 
 // Returns all known aliases (full names + abbreviation) for a canonical branch abbreviation.
@@ -118,11 +147,11 @@ function getBranchVariants(abbr) {
   const ALIASES = {
     CSE:   ['CSE', 'Computer Science and Engineering', 'Computer Science & Engineering', 'Computer Science Engineering', 'COMPUTER SCIENCE AND ENGINEERING', 'COMPUTER SCIENCE & ENGINEERING', 'COMPUTER SCIENCE ENGINEERING', 'B.Tech CSE', 'BTech CSE'],
     CST:   ['CST', 'Computer Science and Technology', 'Computer Science & Technology', 'Computer Science Technology', 'COMPUTER SCIENCE AND TECHNOLOGY', 'COMPUTER SCIENCE & TECHNOLOGY'],
-    AIML:  ['AIML', 'Artificial Intelligence and Machine Learning', 'Artificial Intelligence & Machine Learning', 'AI and ML', 'AI & ML', 'ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING', 'ARTIFICIAL INTELLIGENCE & MACHINE LEARNING'],
+    AIML:  ['AIML', 'Artificial Intelligence and Machine Learning', 'Artificial Intelligence & Machine Learning', 'AI and ML', 'AI & ML', 'ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING', 'ARTIFICIAL INTELLIGENCE & MACHINE LEARNING', 'AI', 'ARTIFICIAL INTELLIGENCE', 'Artificial Intelligence'],
     CAI:   ['CAI', 'Computer and Artificial Intelligence', 'Computer & Artificial Intelligence', 'Computer Artificial Intelligence', 'COMPUTER AND ARTIFICIAL INTELLIGENCE'],
     DS:    ['DS', 'Data Science', 'Data Science and Engineering', 'Data Science & Engineering', 'DATA SCIENCE', 'DATA SCIENCE AND ENGINEERING'],
     ECE:   ['ECE', 'Electronics and Communication Engineering', 'Electronics & Communication Engineering', 'Electronics and Communication', 'Electronics Communication Engineering', 'ELECTRONICS AND COMMUNICATION ENGINEERING', 'ELECTRONICS & COMMUNICATION ENGINEERING', 'ELECTRONICS AND COMMUNICATION'],
-    ECT:   ['ECT', 'Electronics and Computer Technology', 'Electronics & Computer Technology', 'Electronics Computer Technology', 'Electronics and Communication Technology', 'ELECTRONICS AND COMPUTER TECHNOLOGY', 'ELECTRONICS AND COMMUNICATION TECHNOLOGY'],
+    ECT:   ['ECT', 'Electronics and Communication Technology', 'Electronics & Communication Technology', 'Electronics Communication Technology', 'ELECTRONICS AND COMMUNICATION TECHNOLOGY', 'ELECTRONICS & COMMUNICATION TECHNOLOGY'],
     EEE:   ['EEE', 'Electrical and Electronics Engineering', 'Electrical & Electronics Engineering', 'Electrical Electronics Engineering', 'Electrical and Electronics', 'ELECTRICAL AND ELECTRONICS ENGINEERING', 'ELECTRICAL & ELECTRONICS ENGINEERING'],
     MEC:   ['MEC', 'Mechanical Engineering', 'Mechanical', 'MECH', 'MECHANICAL ENGINEERING', 'MECHANICAL'],
     CIVIL: ['CIVIL', 'Civil Engineering', 'Civil Engg', 'CIVIL ENGINEERING', 'CIVIL ENGG'],
@@ -153,7 +182,9 @@ function sanitizeStudentFields(body) {
 
   // Branch → normalize to canonical abbreviation (already uppercase)
   if (result.branch !== undefined && result.branch !== null) {
-    result.branch = normalizeBranch(result.branch);
+    const normalized = normalizeBranch(result.branch);
+    // Only overwrite if we got a non-empty result; otherwise keep original
+    if (normalized) result.branch = normalized;
   }
 
   // photoUrl → normalize cloud share links
@@ -593,11 +624,59 @@ router.get('/search', async (req, res) => {
     res.json({
       success: true,
       count: students.length,
-      students
+      students: students.map(s => ({ ...s, branch: normalizeBranch(s.branch) }))
     });
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ success: false, message: 'Search execution error.' });
+  }
+});
+
+// @route   POST /api/students/migrate-branches
+// @desc    Normalize all student branches in MongoDB to canonical short forms (CSE, ECE, MEC, etc.) & uppercase names
+router.post('/migrate-branches', async (req, res) => {
+  try {
+    const isMongo = getDBState();
+    let updatedCount = 0;
+    const details = [];
+
+    if (isMongo) {
+      const allStudents = await Student.find({}).lean();
+      for (const s of allStudents) {
+        const normBranch = normalizeBranch(s.branch);
+        const normName = s.name ? String(s.name).trim().toUpperCase() : s.name;
+        if (s.branch !== normBranch || s.name !== normName) {
+          await Student.updateOne(
+            { _id: s._id },
+            { $set: { branch: normBranch, name: normName } }
+          );
+          updatedCount++;
+          details.push({ rollNumber: s.rollNumber, oldBranch: s.branch, newBranch: normBranch });
+        }
+      }
+    } else {
+      const memStudents = getMemoryStudents();
+      for (const s of memStudents) {
+        const normBranch = normalizeBranch(s.branch);
+        const normName = s.name ? String(s.name).trim().toUpperCase() : s.name;
+        if (s.branch !== normBranch || s.name !== normName) {
+          s.branch = normBranch;
+          s.name = normName;
+          updatedCount++;
+          details.push({ rollNumber: s.rollNumber, oldBranch: s.branch, newBranch: normBranch });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully migrated ${updatedCount} student record(s) to short branch codes.`,
+      updatedCount,
+      details
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ success: false, message: 'Branch migration error.', error: error.message });
   }
 });
 
@@ -659,6 +738,10 @@ router.get('/:id', async (req, res) => {
 
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student record not found.' });
+    }
+
+    if (student.branch) {
+      student.branch = normalizeBranch(student.branch);
     }
 
     res.json({
@@ -866,7 +949,7 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
 
     // Maps full branch names / common variants → canonical abbreviation
     const normalizeBranch = (raw) => {
-      if (!raw) return 'ECE';
+      if (!raw || String(raw).trim() === '') return '';
       const b = raw.trim().toUpperCase()
         .replace(/\s+/g, ' ')
         .replace(/[^A-Z0-9 &]/g, '');
@@ -875,7 +958,7 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
       const KNOWN = ['CSE','CST','AIML','CAI','DS','ECE','ECT','EEE','MEC','CIVIL','IT'];
       if (KNOWN.includes(b)) return b;
 
-      // Full-name / alias mapping (order matters — longer/more-specific first)
+      // Full-name / alias mapping — order matters: specific BEFORE generic
       const MAP = [
         // CSE variants
         ['COMPUTER SCIENCE AND ENGINEERING', 'CSE'],
@@ -883,10 +966,12 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
         ['COMPUTER SCIENCE ENGINEERING', 'CSE'],
         ['B.TECH CSE', 'CSE'],
         ['BTECH CSE', 'CSE'],
-        // CST variants
+        // CST variants — BEFORE generic 'COMPUTER SCIENCE'
         ['COMPUTER SCIENCE AND TECHNOLOGY', 'CST'],
         ['COMPUTER SCIENCE & TECHNOLOGY', 'CST'],
         ['COMPUTER SCIENCE TECHNOLOGY', 'CST'],
+        // Generic CSE — after CST
+        ['COMPUTER SCIENCE', 'CSE'],
         // AIML variants
         ['ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING', 'AIML'],
         ['ARTIFICIAL INTELLIGENCE & MACHINE LEARNING', 'AIML'],
@@ -898,20 +983,20 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
         ['COMPUTER & ARTIFICIAL INTELLIGENCE', 'CAI'],
         ['COMPUTER ARTIFICIAL INTELLIGENCE', 'CAI'],
         // Data Science variants
-        ['DATA SCIENCE', 'DS'],
         ['DATA SCIENCE AND ENGINEERING', 'DS'],
         ['DATA SCIENCE & ENGINEERING', 'DS'],
-        // ECE variants
+        ['DATA SCIENCE', 'DS'],
+        // ── CRITICAL: ECT BEFORE generic ECE ──
+        ['ELECTRONICS AND COMMUNICATION TECHNOLOGY', 'ECT'],
+        ['ELECTRONICS & COMMUNICATION TECHNOLOGY', 'ECT'],
+        ['ELECTRONICS COMMUNICATION TECHNOLOGY', 'ECT'],
+        // ECE full names
         ['ELECTRONICS AND COMMUNICATION ENGINEERING', 'ECE'],
         ['ELECTRONICS & COMMUNICATION ENGINEERING', 'ECE'],
+        ['ELECTRONICS COMMUNICATION ENGINEERING', 'ECE'],
+        // Generic ECE — AFTER ECT
         ['ELECTRONICS AND COMMUNICATION', 'ECE'],
         ['ELECTRONICS & COMMUNICATION', 'ECE'],
-        ['ELECTRONICS COMMUNICATION ENGINEERING', 'ECE'],
-        // ECT variants
-        ['ELECTRONICS AND COMPUTER TECHNOLOGY', 'ECT'],
-        ['ELECTRONICS & COMPUTER TECHNOLOGY', 'ECT'],
-        ['ELECTRONICS COMPUTER TECHNOLOGY', 'ECT'],
-        ['ELECTRONICS AND COMMUNICATION TECHNOLOGY', 'ECT'],
         // EEE variants
         ['ELECTRICAL AND ELECTRONICS ENGINEERING', 'EEE'],
         ['ELECTRICAL & ELECTRONICS ENGINEERING', 'EEE'],
@@ -919,8 +1004,8 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
         ['ELECTRICAL AND ELECTRONICS', 'EEE'],
         // Mechanical variants
         ['MECHANICAL ENGINEERING', 'MEC'],
-        ['MECHANICAL', 'MEC'],
         ['MECH', 'MEC'],
+        ['MECHANICAL', 'MEC'],
         // Civil variants
         ['CIVIL ENGINEERING', 'CIVIL'],
         ['CIVIL ENGG', 'CIVIL'],
@@ -930,7 +1015,7 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
       ];
 
       for (const [pattern, abbr] of MAP) {
-        if (b === pattern || b.startsWith(pattern + ' ') || b.endsWith(' ' + pattern) || b.includes(pattern)) {
+        if (b === pattern || b.includes(pattern)) {
           return abbr;
         }
       }
@@ -1027,7 +1112,7 @@ router.post('/bulk-import', requireAdmin, async (req, res) => {
         return undefined;
       });
       check('course', ['course', 'Course']);
-      check('branch', ['branch', 'Branch', 'Department', 'department'], v => String(v).trim().toUpperCase());
+      check('branch', ['branch', 'Branch', 'Department', 'department'], v => normalizeBranch(v));
       check('section', ['section', 'Section', 'sec'], v => {
         const m = String(v).toUpperCase().match(/[A-E]/);
         return m ? m[0] : undefined;

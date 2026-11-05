@@ -759,8 +759,43 @@ export default function StudentModal({ student, onClose, onSaved }) {
             )}
           </div>
 
-
-
+          {/* Modal Footer - Submit / Cancel */}
+          {isEditing && (
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => {
+                  if (isExistingStudent) {
+                    setIsEditing(false);
+                    setForm(buildInitial(student));
+                  } else {
+                    onClose();
+                  }
+                }}
+                disabled={loading}
+              >
+                <FaXmark /> Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-emerald"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="loading-spinner" style={{ width: 14, height: 14 }} />
+                    {isExistingStudent ? 'Saving...' : 'Adding...'}
+                  </>
+                ) : (
+                  <>
+                    <FaFloppyDisk />
+                    {isExistingStudent ? 'Save Changes' : 'Add Student'}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </form>
       </div >
     </div >,
